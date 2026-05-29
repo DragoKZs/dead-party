@@ -7,10 +7,7 @@ import {
 
 import { io } from 'socket.io-client';
 
-import {
-  init,
-  miniApp,
-} from '@telegram-apps/sdk';
+
 
 import {
   useSearchParams,
@@ -24,10 +21,7 @@ export default function Home() {
   const [playerName, setPlayerName] =
     useState('');
 
-  const [
-    telegramName,
-    setTelegramName,
-  ] = useState('');
+
 
   const [roomCode, setRoomCode] =
     useState('');
@@ -170,48 +164,16 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    try {
-      init();
+  const roomFromUrl =
+    searchParams.get(
+      'room',
+    );
 
-      miniApp.mount();
-
-      const user =
-        miniApp
-          .initDataUnsafe
-          ?.user;
-
-      if (user) {
-        const fullName = [
-          user.first_name,
-          user.last_name,
-        ]
-          .filter(Boolean)
-          .join(' ');
-
-        setTelegramName(
-          fullName,
-        );
-
-        setPlayerName(
-          fullName,
-        );
-      }
-    } catch (e) {
-      console.log(
-        'Telegram SDK not available',
-      );
-    }
-
-    const roomFromUrl =
-      searchParams.get(
-        'room',
-      );
-
-    if (roomFromUrl) {
-      setRoomCode(
-        roomFromUrl,
-      );
-    }
+  if (roomFromUrl) {
+    setRoomCode(
+      roomFromUrl,
+    );
+   }
   }, [searchParams]);
 
   const joinRoom = () => {
@@ -272,15 +234,7 @@ export default function Home() {
               className="w-full rounded-2xl border border-gray-800 bg-gray-900 p-5 text-xl outline-none"
             />
 
-            {telegramName && (
-              <div className="mt-2 text-sm text-gray-500">
-                Telegram:
-                {' '}
-                {
-                  telegramName
-                }
-              </div>
-            )}
+
           </div>
 
           <div>
