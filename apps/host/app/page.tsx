@@ -7,7 +7,7 @@ import { io } from 'socket.io-client';
 import QRCode from 'react-qr-code';
 
 const socket = io(
-  'http://localhost:3000',
+  'https://dead-party-server.onrender.com',
 );
 
 export default function HostPage() {

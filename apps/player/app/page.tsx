@@ -17,7 +17,7 @@ import {
 } from 'next/navigation';
 
 const socket = io(
-  'http://localhost:3000',
+  'https://dead-party-server.onrender.com',
 );
 
 export default function Home() {
