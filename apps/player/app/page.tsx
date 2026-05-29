@@ -7,21 +7,13 @@ import {
 
 import { io } from 'socket.io-client';
 
-
-
-import {
-  useSearchParams,
-} from 'next/navigation';
-
 const socket = io(
-  'https://dead-party-server.onrender.com',
+  'ТВОЙ_RENDER_URL',
 );
 
 export default function Home() {
   const [playerName, setPlayerName] =
     useState('');
-
-
 
   const [roomCode, setRoomCode] =
     useState('');
@@ -70,8 +62,27 @@ export default function Home() {
     setIsLastChanceRound,
   ] = useState(false);
 
-  const searchParams =
-    useSearchParams();
+  useEffect(() => {
+    if (
+      typeof window ===
+      'undefined'
+    )
+      return;
+
+    const params =
+      new URLSearchParams(
+        window.location.search,
+      );
+
+    const roomFromUrl =
+      params.get('room');
+
+    if (roomFromUrl) {
+      setRoomCode(
+        roomFromUrl,
+      );
+    }
+  }, []);
 
   useEffect(() => {
     socket.on(
@@ -163,19 +174,6 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-  const roomFromUrl =
-    searchParams.get(
-      'room',
-    );
-
-  if (roomFromUrl) {
-    setRoomCode(
-      roomFromUrl,
-    );
-   }
-  }, [searchParams]);
-
   const joinRoom = () => {
     if (
       !playerName.trim() ||
@@ -233,8 +231,6 @@ export default function Home() {
               }
               className="w-full rounded-2xl border border-gray-800 bg-gray-900 p-5 text-xl outline-none"
             />
-
-
           </div>
 
           <div>
@@ -267,7 +263,16 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-black p-4 text-white">
+    <main
+      className={`flex min-h-screen flex-col p-4 text-white transition-all
+      ${
+        isLastChanceRound
+          ? 'bg-red-950'
+          : isSpeedRound
+          ? 'bg-red-950'
+          : 'bg-black'
+      }`}
+    >
       <div className="mb-6 flex items-center justify-between">
         <div>
           <div className="text-sm text-gray-400">
@@ -279,13 +284,52 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="text-5xl font-black text-yellow-400">
+        <div
+          className={`text-5xl font-black
+          ${
+            timeLeft <= 3
+              ? 'animate-pulse text-red-500'
+              : 'text-yellow-400'
+          }`}
+        >
           ⏳ {timeLeft}
         </div>
       </div>
 
+      {paused && (
+        <div className="mb-4 rounded-2xl bg-yellow-500 p-4 text-center text-2xl font-black text-black">
+          GAME PAUSED
+        </div>
+      )}
+
       {question && (
         <div className="flex flex-1 flex-col gap-4">
+          {isSpeedRound && (
+            <div className="rounded-2xl bg-yellow-400 p-4 text-center text-2xl font-black text-black">
+              ⚡ SPEED ROUND ⚡
+            </div>
+          )}
+
+          {isBlackoutRound && (
+            <div className="rounded-2xl bg-white p-4 text-center text-2xl font-black text-black">
+              🌑 ANSWERS WILL
+              DISAPPEAR
+            </div>
+          )}
+
+          {isLastChanceRound && (
+            <div className="rounded-2xl bg-red-950 p-4 text-center text-2xl font-black text-white">
+              ☠ LAST CHANCE
+              ROUND
+              <div className="mt-2 text-lg text-gray-300">
+                ❤️ Recover lives
+                <br />
+                🏆 Or gain bonus
+                points
+              </div>
+            </div>
+          )}
+
           <div className="rounded-3xl bg-gray-900 p-6 text-center text-3xl font-black">
             {question.text}
           </div>
@@ -307,13 +351,40 @@ export default function Home() {
                       index,
                     )
                   }
-                  className="min-h-[90px] rounded-3xl bg-red-600 p-6 text-2xl font-black transition-all active:scale-95 disabled:opacity-50"
+                  className={`min-h-[90px] rounded-3xl p-6 text-2xl font-black transition-all duration-700 active:scale-95 disabled:opacity-50
+                  ${
+                    questionEnded &&
+                    correctAnswer ===
+                      index
+                      ? 'bg-green-600'
+                      : 'bg-red-600'
+                  }
+
+                  ${
+                    isBlackoutRound &&
+                    timeLeft <= 7
+                      ? 'opacity-10 blur-sm'
+                      : ''
+                  }`}
                 >
                   {answer}
                 </button>
               ),
             )}
           </div>
+
+          {lockedAnswer &&
+            !questionEnded && (
+              <div className="rounded-2xl bg-blue-600 p-5 text-center text-3xl font-black">
+                ANSWER LOCKED
+              </div>
+            )}
+
+          {questionEnded && (
+            <div className="rounded-2xl bg-gray-900 p-5 text-center text-3xl font-black">
+              TIME'S UP
+            </div>
+          )}
         </div>
       )}
     </main>
