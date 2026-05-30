@@ -22,11 +22,40 @@ export default function ScreenPage() {
   const [joined, setJoined] =
     useState(false);
 
-  const [question, setQuestion] =
-    useState<any>(null);
-
   const [players, setPlayers] =
     useState<any[]>([]);
+
+  const [
+    mazeActive,
+    setMazeActive,
+  ] = useState(false);
+
+  const [mazeTimer, setMazeTimer] =
+    useState(45);
+
+  const [
+    mazeDifficulty,
+    setMazeDifficulty,
+  ] = useState('');
+
+  const [
+    mazeFinishedPlayers,
+    setMazeFinishedPlayers,
+  ] = useState<any[]>([]);
+
+  const [
+    mazeStats,
+    setMazeStats,
+  ] = useState({
+    finished: 0,
+    failed: 0,
+    total: 0,
+  });
+
+  const [
+    question,
+    setQuestion,
+  ] = useState<any>(null);
 
   const [timeLeft, setTimeLeft] =
     useState(0);
@@ -43,96 +72,29 @@ export default function ScreenPage() {
     null,
   );
 
-  const [
-    isSpeedRound,
-    setIsSpeedRound,
-  ] = useState(false);
-
-  const [
-    isBlackoutRound,
-    setIsBlackoutRound,
-  ] = useState(false);
-
-  const [
-    isLastChanceRound,
-    setIsLastChanceRound,
-  ] = useState(false);
-
-  const [
-    isFinalRound,
-    setIsFinalRound,
-  ] = useState(false);
-
-  const [
-    killFeed,
-    setKillFeed,
-  ] = useState<any[]>([]);
-
-  const [
-    gameFinished,
-    setGameFinished,
-  ] = useState(false);
-
-  const [
-    winner,
-    setWinner,
-  ] = useState<any>(null);
-
   useEffect(() => {
     socket.on(
       'playersUpdated',
       (data) => {
-        const sorted =
-          [...data.players].sort(
-            (a, b) => {
-              if (
-                a.lives > 0 &&
-                b.lives <= 0
-              )
-                return -1;
-
-              if (
-                a.lives <= 0 &&
-                b.lives > 0
-              )
-                return 1;
-
-              return (
-                b.score -
-                a.score
-              );
-            },
-          );
-
-        setPlayers(sorted);
+        setPlayers(
+          data.players,
+        );
       },
     );
 
     socket.on(
       'questionStarted',
       (data) => {
+        setMazeActive(
+          false,
+        );
+
         setQuestion(data);
 
         setQuestionEnded(false);
 
-        setCorrectAnswer(null);
-
-        setGameFinished(false);
-
-        setIsSpeedRound(
-          data.isSpeedRound,
-        );
-
-        setIsBlackoutRound(
-          data.isBlackoutRound,
-        );
-
-        setIsLastChanceRound(
-          data.isLastChanceRound,
-        );
-
-        setIsFinalRound(
-          data.isFinalRound,
+        setCorrectAnswer(
+          null,
         );
       },
     );
@@ -158,27 +120,69 @@ export default function ScreenPage() {
     );
 
     socket.on(
-      'killFeedUpdated',
-      (
-        events,
-      ) => {
-        setKillFeed(events);
+      'mazeStarted',
+      (data) => {
+        setQuestion(null);
+
+        setMazeActive(
+          true,
+        );
+
+        setMazeTimer(
+          data.timer,
+        );
+
+        setMazeDifficulty(
+          data.difficulty,
+        );
+
+        setMazeFinishedPlayers(
+          [],
+        );
+
+        setMazeStats({
+          finished: 0,
+          failed: 0,
+          total: 0,
+        });
       },
     );
 
     socket.on(
-      'gameFinished',
+      'mazeTimer',
       (data) => {
-        setGameFinished(
-          true,
+        setMazeTimer(
+          data.timeLeft,
         );
+      },
+    );
 
-        setWinner(
-          data.winner,
+    socket.on(
+      'mazeStats',
+      (data) => {
+        setMazeStats(
+          data,
         );
+      },
+    );
 
-        setPlayers(
-          data.players,
+    socket.on(
+      'mazePlayerFinished',
+      (data) => {
+        setMazeFinishedPlayers(
+          (prev) => [
+            ...prev,
+            data.player,
+          ],
+        );
+      },
+    );
+
+    socket.on(
+      'mazeEnded',
+      () => {
+        setMazeActive(
+          false,
         );
       },
     );
@@ -201,16 +205,28 @@ export default function ScreenPage() {
       );
 
       socket.off(
-        'killFeedUpdated',
+        'mazeStarted',
       );
 
       socket.off(
-        'gameFinished',
+        'mazeTimer',
+      );
+
+      socket.off(
+        'mazeStats',
+      );
+
+      socket.off(
+        'mazePlayerFinished',
+      );
+
+      socket.off(
+        'mazeEnded',
       );
     };
   }, []);
 
-  const topThree =
+  const topPlayers =
     useMemo(() => {
       return [
         ...players,
@@ -223,77 +239,7 @@ export default function ScreenPage() {
             b.score -
             a.score,
         )
-        .slice(0, 3);
-    }, [players]);
-
-  const achievements =
-    useMemo(() => {
-      if (
-        !players.length
-      )
-        return [];
-
-      const fastest =
-        [...players].sort(
-          (
-            a,
-            b,
-          ) =>
-            b.bestStreak -
-            a.bestStreak,
-        )[0];
-
-      const smartest =
-        [...players].sort(
-          (
-            a,
-            b,
-          ) =>
-            b.correctAnswers -
-            a.correctAnswers,
-        )[0];
-
-      const survivor =
-        [...players].sort(
-          (
-            a,
-            b,
-          ) =>
-            b.lives -
-            a.lives,
-        )[0];
-
-      return [
-        {
-          title:
-            '🔥 ЛУЧШАЯ СЕРИЯ',
-          player:
-            fastest,
-          value:
-            fastest?.bestStreak ||
-            0,
-        },
-
-        {
-          title:
-            '🧠 БОЛЬШЕ ВСЕГО ПРАВИЛЬНЫХ',
-          player:
-            smartest,
-          value:
-            smartest?.correctAnswers ||
-            0,
-        },
-
-        {
-          title:
-            '☠ ВЫЖИВШИЙ',
-          player:
-            survivor,
-          value:
-            survivor?.lives ||
-            0,
-        },
-      ];
+        .slice(0, 10);
     }, [players]);
 
   const joinScreen =
@@ -311,9 +257,9 @@ export default function ScreenPage() {
   if (!joined) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white">
-        <h1 className="mb-10 text-7xl font-black text-red-600">
+        <div className="mb-10 text-7xl font-black text-red-600">
           SCREEN
-        </h1>
+        </div>
 
         <div className="flex flex-col gap-4">
           <input
@@ -341,142 +287,206 @@ export default function ScreenPage() {
     );
   }
 
-  if (gameFinished) {
+  if (mazeActive) {
     return (
-      <main className="min-h-screen overflow-hidden bg-black p-10 text-white">
-        <div className="mb-16 text-center">
-          <div className="mb-4 text-8xl font-black text-yellow-400">
-            👑
+      <main className="relative min-h-screen overflow-hidden bg-black p-8 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.15),transparent_70%)]" />
+
+        <div className="relative z-10">
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <div className="text-8xl font-black text-cyan-400">
+                🧩 MAZE RUN
+              </div>
+
+              <div className="mt-3 text-3xl font-black text-gray-400">
+                СЛОЖНОСТЬ:{' '}
+                {mazeDifficulty.toUpperCase()}
+              </div>
+            </div>
+
+            <div
+              className={`text-9xl font-black
+              ${
+                mazeTimer <= 10
+                  ? 'animate-pulse text-red-500'
+                  : 'text-yellow-400'
+              }`}
+            >
+              {mazeTimer}
+            </div>
           </div>
 
-          <div className="mb-2 text-7xl font-black">
-            ПОБЕДИТЕЛЬ
+          <div className="mb-8 grid grid-cols-3 gap-6">
+            <div className="rounded-3xl border border-green-500 bg-green-500/10 p-8 text-center">
+              <div className="text-7xl font-black text-green-400">
+                {
+                  mazeStats.finished
+                }
+              </div>
+
+              <div className="mt-4 text-3xl font-black">
+                ДОШЛИ
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-red-500 bg-red-500/10 p-8 text-center">
+              <div className="text-7xl font-black text-red-400">
+                {
+                  mazeStats.failed
+                }
+              </div>
+
+              <div className="mt-4 text-3xl font-black">
+                ПРОИГРАЛИ
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-yellow-400 bg-yellow-400/10 p-8 text-center">
+              <div className="text-7xl font-black text-yellow-400">
+                {
+                  mazeStats.total
+                }
+              </div>
+
+              <div className="mt-4 text-3xl font-black">
+                ВСЕГО
+              </div>
+            </div>
           </div>
 
-          <div className="text-6xl font-black text-red-500">
-            {
-              winner?.name
-            }
-          </div>
-        </div>
+          <div className="grid grid-cols-2 gap-8">
+            <div className="rounded-3xl border border-gray-800 bg-gray-950/80 p-8">
+              <div className="mb-6 text-5xl font-black text-cyan-400">
+                ❤️ СПАСЛИСЬ
+              </div>
 
-        <div className="mb-20">
-          <div className="mb-10 text-center text-6xl font-black">
-            🏆 ТОП 3
-          </div>
+              <div className="flex flex-col gap-4">
+                {mazeFinishedPlayers.length ===
+                0 ? (
+                  <div className="text-3xl text-gray-500">
+                    Пока никто не
+                    дошел...
+                  </div>
+                ) : (
+                  mazeFinishedPlayers.map(
+                    (
+                      player,
+                      index,
+                    ) => (
+                      <div
+                        key={`${player.name}-${index}`}
+                        className="flex items-center justify-between rounded-2xl bg-black p-5"
+                      >
+                        <div className="flex items-center gap-4">
+                          {player.avatar?.startsWith(
+                            'http',
+                          ) ? (
+                            <img
+                              src={
+                                player.avatar
+                              }
+                              alt="avatar"
+                              className="h-16 w-16 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-5xl">
+                              {
+                                player.avatar
+                              }
+                            </div>
+                          )}
 
-          <div className="grid grid-cols-3 gap-8">
-            {topThree.map(
-              (
-                player,
-                index,
-              ) => (
-                <div
-                  key={
-                    player.id
-                  }
-                  className={`rounded-3xl border-4 p-8 text-center shadow-[0_0_40px_rgba(255,255,255,0.2)]
-                  ${
-                    index ===
-                    0
-                      ? 'border-yellow-400 bg-yellow-500/10'
-                      : index ===
-                        1
-                      ? 'border-gray-300 bg-gray-300/10'
-                      : 'border-orange-700 bg-orange-700/10'
-                  }`}
-                >
-                  <div className="mb-4 text-7xl">
-                    {player.avatar?.startsWith(
-                      'http',
-                    ) ? (
-                      <img
-                        src={
-                          player.avatar
+                          <div className="text-3xl font-black">
+                            {
+                              player.name
+                            }
+                          </div>
+                        </div>
+
+                        <div className="text-5xl">
+                          ❤️
+                        </div>
+                      </div>
+                    ),
+                  )
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-gray-800 bg-gray-950/80 p-8">
+              <div className="mb-6 text-5xl font-black text-yellow-400">
+                🏆 ЛИДЕРЫ
+              </div>
+
+              <div className="flex flex-col gap-4">
+                {topPlayers.map(
+                  (
+                    player,
+                    index,
+                  ) => (
+                    <div
+                      key={
+                        player.id
+                      }
+                      className={`flex items-center justify-between rounded-2xl p-5
+                      ${
+                        index ===
+                        0
+                          ? 'border border-yellow-400 bg-yellow-500/10'
+                          : 'bg-black'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="text-3xl font-black">
+                          #
+                          {index +
+                            1}
+                        </div>
+
+                        {player.avatar?.startsWith(
+                          'http',
+                        ) ? (
+                          <img
+                            src={
+                              player.avatar
+                            }
+                            alt="avatar"
+                            className="h-14 w-14 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-4xl">
+                            {
+                              player.avatar
+                            }
+                          </div>
+                        )}
+
+                        <div className="text-2xl font-black">
+                          {
+                            player.name
+                          }
+                        </div>
+                      </div>
+
+                      <div className="text-3xl font-black text-yellow-400">
+                        🏆{' '}
+                        {
+                          player.score
                         }
-                        alt="avatar"
-                        className="mx-auto h-28 w-28 rounded-full object-cover"
-                      />
-                    ) : (
-                      player.avatar
-                    )}
-                  </div>
-
-                  <div className="mb-3 text-4xl font-black">
-                    {
-                      player.name
-                    }
-                  </div>
-
-                  <div className="text-3xl font-black text-yellow-400">
-                    🏆{' '}
-                    {
-                      player.score
-                    }
-                  </div>
-                </div>
-              ),
-            )}
-          </div>
-        </div>
-
-        <div>
-          <div className="mb-10 text-center text-6xl font-black">
-            ⚡ ДОСТИЖЕНИЯ
+                      </div>
+                    </div>
+                  ),
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-8">
-            {achievements.map(
-              (
-                achievement,
-                index,
-              ) => (
-                <div
-                  key={index}
-                  className="rounded-3xl border-2 border-red-500 bg-red-500/10 p-8 text-center"
-                >
-                  <div className="mb-4 text-3xl font-black">
-                    {
-                      achievement.title
-                    }
-                  </div>
-
-                  <div className="mb-4 text-5xl">
-                    {achievement.player?.avatar?.startsWith(
-                      'http',
-                    ) ? (
-                      <img
-                        src={
-                          achievement
-                            .player
-                            .avatar
-                        }
-                        alt="avatar"
-                        className="mx-auto h-24 w-24 rounded-full object-cover"
-                      />
-                    ) : (
-                      achievement
-                        .player
-                        ?.avatar
-                    )}
-                  </div>
-
-                  <div className="mb-2 text-4xl font-black">
-                    {
-                      achievement
-                        .player
-                        ?.name
-                    }
-                  </div>
-
-                  <div className="text-3xl font-black text-yellow-400">
-                    {
-                      achievement.value
-                    }
-                  </div>
-                </div>
-              ),
-            )}
+          <div className="mt-10 text-center">
+            <div className="animate-pulse text-4xl font-black text-red-500">
+              ДОБЕРИТЕСЬ ДО
+              СЕРДЦА ❤️
+            </div>
           </div>
         </div>
       </main>
@@ -484,90 +494,21 @@ export default function ScreenPage() {
   }
 
   return (
-    <main
-      className={`relative min-h-screen overflow-hidden p-10 text-white transition-all
-      ${
-        isFinalRound
-          ? 'bg-gradient-to-b from-red-950 via-black to-black'
-          : isLastChanceRound
-          ? 'bg-red-950'
-          : isSpeedRound
-          ? 'bg-red-950'
-          : 'bg-black'
-      }`}
-    >
-      <div className="absolute right-5 top-5 z-50 flex w-[420px] flex-col gap-3">
-        {killFeed.map(
-          (
-            event,
-          ) => (
-            <div
-              key={
-                event.id
-              }
-              className="animate-pulse rounded-2xl border border-red-600 bg-black/80 p-4 text-xl font-black shadow-[0_0_20px_rgba(255,0,0,0.4)] backdrop-blur"
-            >
-              {
-                event.text
-              }
-            </div>
-          ),
-        )}
-      </div>
-
+    <main className="min-h-screen bg-black p-10 text-white">
       <div className="mb-8 flex items-center justify-between">
-        <div className="text-5xl font-black text-red-600">
-          {
-            roomCode
-          }
+        <div className="text-6xl font-black text-red-600">
+          {roomCode}
         </div>
 
-        <div
-          className={`text-7xl font-black
-          ${
-            timeLeft <=
-            (isFinalRound
-              ? 5
-              : 3)
-              ? 'animate-pulse text-red-500'
-              : 'text-yellow-400'
-          }`}
-        >
+        <div className="text-8xl font-black text-yellow-400">
           {timeLeft}
         </div>
       </div>
 
-      {isSpeedRound && (
-        <div className="mb-6 rounded-3xl bg-yellow-400 p-6 text-center text-5xl font-black text-black">
-          ⚡ БЛИЦ
-        </div>
-      )}
-
-      {isBlackoutRound && (
-        <div className="mb-6 rounded-3xl bg-white p-6 text-center text-5xl font-black text-black">
-          🌑 ТЕМНОТА
-        </div>
-      )}
-
-      {isLastChanceRound && (
-        <div className="mb-6 rounded-3xl bg-red-700 p-6 text-center text-5xl font-black">
-          ☠ ПОСЛЕДНИЙ
-          ШАНС
-        </div>
-      )}
-
-      {isFinalRound && (
-        <div className="mb-6 animate-pulse rounded-3xl border-4 border-red-500 bg-black p-8 text-center text-7xl font-black text-red-500 shadow-[0_0_60px_rgba(255,0,0,0.8)]">
-          🔥 ФИНАЛ 🔥
-        </div>
-      )}
-
       {question && (
         <div>
-          <div className="mb-10 rounded-3xl bg-gray-900 p-10 text-center text-5xl font-black shadow-[0_0_40px_rgba(255,255,255,0.1)]">
-            {
-              question.text
-            }
+          <div className="mb-10 rounded-3xl bg-gray-900 p-10 text-center text-5xl font-black">
+            {question.text}
           </div>
 
           <div className="grid grid-cols-2 gap-6">
@@ -578,114 +519,22 @@ export default function ScreenPage() {
               ) => (
                 <div
                   key={index}
-                  className={`rounded-3xl p-10 text-center text-4xl font-black transition-all duration-700
+                  className={`rounded-3xl p-10 text-center text-4xl font-black
                   ${
                     questionEnded &&
                     correctAnswer ===
                       index
-                      ? 'scale-105 bg-green-600 shadow-[0_0_40px_rgba(0,255,0,0.8)]'
+                      ? 'bg-green-600'
                       : 'bg-red-600'
-                  }
-
-                  ${
-                    isBlackoutRound &&
-                    timeLeft <= 7
-                      ? 'opacity-0'
-                      : ''
                   }`}
                 >
-                  {
-                    answer
-                  }
+                  {answer}
                 </div>
               ),
             )}
           </div>
         </div>
       )}
-
-      <div className="mt-10">
-        <h2 className="mb-6 text-5xl font-black">
-          🏆 ЛИДЕРЫ
-        </h2>
-
-        <div className="flex flex-col gap-4">
-          {players.map(
-            (
-              player,
-              index,
-            ) => (
-              <div
-                key={player.id}
-                className={`flex items-center justify-between rounded-3xl p-6 text-3xl font-black transition-all
-                ${
-                  player.lives <= 0
-                    ? 'bg-gray-900 opacity-30'
-                    : index ===
-                      0
-                    ? 'border-2 border-yellow-400 bg-yellow-500/10'
-                    : 'bg-gray-800'
-                }`}
-              >
-                <div className="flex items-center gap-5">
-                  <div className="text-4xl">
-                    {player.avatar?.startsWith(
-                      'http',
-                    ) ? (
-                      <img
-                        src={
-                          player.avatar
-                        }
-                        alt="avatar"
-                        className="h-16 w-16 rounded-full object-cover"
-                      />
-                    ) : (
-                      player.avatar
-                    )}
-                  </div>
-
-                  <div>
-                    <div>
-                      #
-                      {index +
-                        1}{' '}
-                      {
-                        player.name
-                      }
-                    </div>
-
-                    {player.bestStreak >=
-                      3 && (
-                      <div className="mt-1 text-lg text-yellow-400">
-                        🔥 x
-                        {
-                          player.bestStreak
-                        }
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex gap-8">
-                  <div>
-                    ❤️{' '}
-                    {
-                      player.lives
-                    }
-                  </div>
-
-                  <div>
-                    🏆{' '}
-                    {
-                      player.score
-                    }
-                  </div>
-                </div>
-              </div>
-            ),
-          )}
-        </div>
-      </div>
     </main>
   );
 }

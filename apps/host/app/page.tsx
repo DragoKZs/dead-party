@@ -28,19 +28,33 @@ export default function HostPage() {
     useState<any[]>([]);
 
   const [
-    gameStarted,
-    setGameStarted,
-  ] = useState(false);
-
-  const [
     currentMode,
     setCurrentMode,
-  ] = useState('');
+  ] = useState('ОЖИДАНИЕ');
 
   const [
     gamePaused,
     setGamePaused,
   ] = useState(false);
+
+  const [
+    miniGameActive,
+    setMiniGameActive,
+  ] = useState(false);
+
+  const [
+    currentMiniGame,
+    setCurrentMiniGame,
+  ] = useState('');
+
+  const [
+    mazeStats,
+    setMazeStats,
+  ] = useState({
+    finished: 0,
+    failed: 0,
+    total: 0,
+  });
 
   useEffect(() => {
     socket.on(
@@ -55,8 +69,12 @@ export default function HostPage() {
     socket.on(
       'questionStarted',
       (data) => {
-        setGameStarted(
-          true,
+        setMiniGameActive(
+          false,
+        );
+
+        setCurrentMiniGame(
+          '',
         );
 
         if (
@@ -85,9 +103,70 @@ export default function HostPage() {
           );
         } else {
           setCurrentMode(
-            '🎮 ОБЫЧНЫЙ РАУНД',
+            '🎮 ВОПРОС',
           );
         }
+      },
+    );
+
+    socket.on(
+      'reactionWaiting',
+      () => {
+        setMiniGameActive(
+          true,
+        );
+
+        setCurrentMiniGame(
+          '⚡ REACTION GAME',
+        );
+      },
+    );
+
+    socket.on(
+      'reactionEnded',
+      () => {
+        setMiniGameActive(
+          false,
+        );
+
+        setCurrentMiniGame(
+          '',
+        );
+      },
+    );
+
+    socket.on(
+      'mazeStarted',
+      () => {
+        setMiniGameActive(
+          true,
+        );
+
+        setCurrentMiniGame(
+          '🧩 MAZE RUN',
+        );
+      },
+    );
+
+    socket.on(
+      'mazeStats',
+      (data) => {
+        setMazeStats(
+          data,
+        );
+      },
+    );
+
+    socket.on(
+      'mazeEnded',
+      () => {
+        setMiniGameActive(
+          false,
+        );
+
+        setCurrentMiniGame(
+          '',
+        );
       },
     );
 
@@ -107,6 +186,26 @@ export default function HostPage() {
 
       socket.off(
         'questionStarted',
+      );
+
+      socket.off(
+        'reactionWaiting',
+      );
+
+      socket.off(
+        'reactionEnded',
+      );
+
+      socket.off(
+        'mazeStarted',
+      );
+
+      socket.off(
+        'mazeStats',
+      );
+
+      socket.off(
+        'mazeEnded',
       );
 
       socket.off(
@@ -130,6 +229,11 @@ export default function HostPage() {
   };
 
   const startGame = () => {
+    if (
+      miniGameActive
+    )
+      return;
+
     socket.emit(
       'startGame',
       {
@@ -139,6 +243,11 @@ export default function HostPage() {
   };
 
   const nextQuestion = () => {
+    if (
+      miniGameActive
+    )
+      return;
+
     socket.emit(
       'nextQuestion',
       {
@@ -165,14 +274,44 @@ export default function HostPage() {
     );
   };
 
-  const speedRound = () => {
+  const reactionGame =
+    () => {
+      if (
+        miniGameActive
+      )
+        return;
+
+      socket.emit(
+        'startReactionGame',
+        {
+          roomCode,
+        },
+      );
+    };
+
+  const mazeRun = () => {
+    if (
+      miniGameActive
+    )
+      return;
+
     socket.emit(
-      'forceSpeedRound',
+      'startMazeGame',
       {
         roomCode,
       },
     );
   };
+
+  const speedRound =
+    () => {
+      socket.emit(
+        'forceSpeedRound',
+        {
+          roomCode,
+        },
+      );
+    };
 
   const blackoutRound =
     () => {
@@ -194,7 +333,7 @@ export default function HostPage() {
       );
     };
 
-  const forceFinalRound =
+  const finalRound =
     () => {
       socket.emit(
         'forceFinalRound',
@@ -204,9 +343,15 @@ export default function HostPage() {
       );
     };
 
-  const restartGame = () => {
-    window.location.reload();
-  };
+  const finishGame =
+    () => {
+      socket.emit(
+        'finishGame',
+        {
+          roomCode,
+        },
+      );
+    };
 
   const alivePlayers =
     useMemo(() => {
@@ -317,10 +462,18 @@ export default function HostPage() {
           </div>
         </div>
 
-        <div className="rounded-3xl border border-purple-600 bg-purple-600/10 p-6 text-center">
+        <div
+          className={`rounded-3xl p-6 text-center
+          ${
+            miniGameActive
+              ? 'border border-purple-500 bg-purple-500/10'
+              : 'border border-blue-500 bg-blue-500/10'
+          }`}
+        >
           <div className="text-2xl font-black">
-            {currentMode ||
-              'ОЖИДАНИЕ'}
+            {miniGameActive
+              ? currentMiniGame
+              : currentMode}
           </div>
 
           <div className="mt-2 text-xl font-bold">
@@ -329,19 +482,77 @@ export default function HostPage() {
         </div>
       </div>
 
+      {miniGameActive &&
+        currentMiniGame ===
+          '🧩 MAZE RUN' && (
+          <div className="mb-8 grid grid-cols-3 gap-4">
+            <div className="rounded-3xl border border-green-500 bg-green-500/10 p-6 text-center">
+              <div className="text-5xl font-black">
+                {
+                  mazeStats.finished
+                }
+              </div>
+
+              <div className="mt-2 text-xl font-bold">
+                ДОШЛИ
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-red-500 bg-red-500/10 p-6 text-center">
+              <div className="text-5xl font-black">
+                {
+                  mazeStats.failed
+                }
+              </div>
+
+              <div className="mt-2 text-xl font-bold">
+                ПРОИГРАЛИ
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-yellow-400 bg-yellow-400/10 p-6 text-center">
+              <div className="text-5xl font-black">
+                {
+                  mazeStats.total
+                }
+              </div>
+
+              <div className="mt-2 text-xl font-bold">
+                ВСЕГО
+              </div>
+            </div>
+          </div>
+        )}
+
       <div className="mb-8 grid grid-cols-2 gap-4">
         <button
+          disabled={
+            miniGameActive
+          }
           onClick={startGame}
-          className="rounded-3xl bg-green-600 p-6 text-3xl font-black"
+          className={`rounded-3xl p-6 text-3xl font-black
+          ${
+            miniGameActive
+              ? 'bg-gray-700 opacity-40'
+              : 'bg-green-600'
+          }`}
         >
           ▶ НАЧАТЬ ИГРУ
         </button>
 
         <button
+          disabled={
+            miniGameActive
+          }
           onClick={
             nextQuestion
           }
-          className="rounded-3xl bg-blue-600 p-6 text-3xl font-black"
+          className={`rounded-3xl p-6 text-3xl font-black
+          ${
+            miniGameActive
+              ? 'bg-gray-700 opacity-40'
+              : 'bg-blue-600'
+          }`}
         >
           ⏭ СЛЕДУЮЩИЙ
           ВОПРОС
@@ -369,12 +580,56 @@ export default function HostPage() {
 
         <button
           onClick={
-            restartGame
+            finishGame
           }
-          className="rounded-3xl bg-gray-700 p-6 text-3xl font-black"
+          className="rounded-3xl bg-red-700 p-6 text-3xl font-black"
         >
-          🔄 РЕСТАРТ
+          🛑 ЗАВЕРШИТЬ
+          ИГРУ
         </button>
+      </div>
+
+      <div className="mb-8">
+        <div className="mb-4 text-4xl font-black">
+          🎮 МИНИ-ИГРЫ
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            disabled={
+              miniGameActive
+            }
+            onClick={
+              reactionGame
+            }
+            className={`rounded-3xl p-6 text-3xl font-black
+            ${
+              miniGameActive
+                ? 'bg-gray-700 opacity-40'
+                : 'bg-orange-500'
+            }`}
+          >
+            ⚡ REACTION
+            GAME
+          </button>
+
+          <button
+            disabled={
+              miniGameActive
+            }
+            onClick={
+              mazeRun
+            }
+            className={`rounded-3xl p-6 text-3xl font-black
+            ${
+              miniGameActive
+                ? 'bg-gray-700 opacity-40'
+                : 'bg-cyan-600'
+            }`}
+          >
+            🧩 MAZE RUN
+          </button>
+        </div>
       </div>
 
       <div className="mb-8">
@@ -414,7 +669,7 @@ export default function HostPage() {
 
           <button
             onClick={
-              forceFinalRound
+              finalRound
             }
             className="rounded-3xl bg-red-600 p-6 text-3xl font-black shadow-[0_0_40px_rgba(255,0,0,0.7)]"
           >
