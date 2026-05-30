@@ -8,6 +8,9 @@ import { io } from 'socket.io-client';
 
 const socket = io(
   'https://dead-party-server.onrender.com',
+  {
+    reconnection: true,
+  }
 );
 
 export default function HostPage() {

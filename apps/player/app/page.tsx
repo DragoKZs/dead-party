@@ -15,6 +15,11 @@ import {
 
 const socket = io(
   'https://dead-party-server.onrender.com',
+  {
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+  }
 );
 
 export default function Home() {
