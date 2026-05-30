@@ -16,9 +16,14 @@ import {
 const socket = io(
   'https://dead-party-server.onrender.com',
   {
+    transports: [
+      'websocket',
+    ],
+
     reconnection: true,
-    reconnectionAttempts:
-      Infinity,
+
+    reconnectionAttempts: 999999,
+
     reconnectionDelay: 1000,
   },
 );
@@ -112,6 +117,8 @@ export default function Home() {
 
       miniApp.mount();
 
+      miniApp.requestFullscreen();
+
       const lp =
         retrieveLaunchParams();
 
@@ -135,7 +142,7 @@ export default function Home() {
           fullName,
         );
       }
-    } catch {
+    } catch (e) {
       console.log(
         'Telegram SDK unavailable',
       );
@@ -255,6 +262,14 @@ export default function Home() {
   }, []);
 
   const joinRoom = () => {
+    if (!connected) {
+      alert(
+        'Socket not connected yet',
+      );
+
+      return;
+    }
+
     if (
       !playerName.trim() ||
       !roomCode.trim()
@@ -302,40 +317,54 @@ export default function Home() {
 
         {telegramUser && (
           <div className="mb-4 rounded-2xl bg-blue-600 p-3 text-center font-bold">
-            Telegram:{' '}
+            Telegram:
+            {' '}
             {telegramUser.username ||
               telegramUser.first_name}
           </div>
         )}
 
         <div className="flex w-full max-w-sm flex-col gap-4">
-          <input
-            type="text"
-            placeholder="YOUR NAME"
-            value={playerName}
-            onChange={(e) =>
-              setPlayerName(
-                e.target.value,
-              )
-            }
-            className="w-full rounded-2xl bg-gray-900 p-5 text-xl outline-none"
-          />
+          <div>
+            <div className="mb-2 text-sm font-bold text-gray-400">
+              NICKNAME
+            </div>
 
-          <input
-            type="text"
-            placeholder="ROOM CODE"
-            value={roomCode}
-            onChange={(e) =>
-              setRoomCode(
-                e.target.value,
-              )
-            }
-            className="w-full rounded-2xl bg-gray-900 p-5 text-xl outline-none"
-          />
+            <input
+              type="text"
+              placeholder="YOUR NAME"
+              value={playerName}
+              onChange={(e) =>
+                setPlayerName(
+                  e.target.value,
+                )
+              }
+              className="w-full rounded-2xl border border-gray-800 bg-gray-900 p-5 text-xl outline-none"
+            />
+          </div>
+
+          <div>
+            <div className="mb-2 text-sm font-bold text-gray-400">
+              ROOM CODE
+            </div>
+
+            <input
+              type="text"
+              placeholder="ROOM CODE"
+              value={roomCode}
+              onChange={(e) =>
+                setRoomCode(
+                  e.target.value,
+                )
+              }
+              className="w-full rounded-2xl border border-gray-800 bg-gray-900 p-5 text-xl outline-none"
+            />
+          </div>
 
           <button
+            disabled={!connected}
             onClick={joinRoom}
-            className="rounded-2xl bg-red-600 p-5 text-2xl font-black"
+            className="mt-2 rounded-2xl bg-red-600 p-5 text-2xl font-black transition-all active:scale-95 disabled:opacity-50"
           >
             JOIN ROOM
           </button>
@@ -346,7 +375,7 @@ export default function Home() {
 
   return (
     <main
-      className={`flex min-h-screen flex-col p-4 text-white
+      className={`flex min-h-screen flex-col p-4 text-white transition-all
       ${
         isLastChanceRound
           ? 'bg-red-950'
@@ -356,11 +385,24 @@ export default function Home() {
       }`}
     >
       <div className="mb-6 flex items-center justify-between">
-        <div className="text-2xl font-black">
-          {playerName}
+        <div>
+          <div className="text-sm text-gray-400">
+            PLAYER
+          </div>
+
+          <div className="text-2xl font-black">
+            {playerName}
+          </div>
         </div>
 
-        <div className="text-5xl font-black text-yellow-400">
+        <div
+          className={`text-5xl font-black
+          ${
+            timeLeft <= 3
+              ? 'animate-pulse text-red-500'
+              : 'text-yellow-400'
+          }`}
+        >
           ⏳ {timeLeft}
         </div>
       </div>
@@ -373,6 +415,26 @@ export default function Home() {
 
       {question && (
         <div className="flex flex-1 flex-col gap-4">
+          {isSpeedRound && (
+            <div className="rounded-2xl bg-yellow-400 p-4 text-center text-2xl font-black text-black">
+              ⚡ SPEED ROUND ⚡
+            </div>
+          )}
+
+          {isBlackoutRound && (
+            <div className="rounded-2xl bg-white p-4 text-center text-2xl font-black text-black">
+              🌑 ANSWERS WILL
+              DISAPPEAR
+            </div>
+          )}
+
+          {isLastChanceRound && (
+            <div className="rounded-2xl bg-red-950 p-4 text-center text-2xl font-black text-white">
+              ☠ LAST CHANCE
+              ROUND
+            </div>
+          )}
+
           <div className="rounded-3xl bg-gray-900 p-6 text-center text-3xl font-black">
             {question.text}
           </div>
@@ -394,7 +456,7 @@ export default function Home() {
                       index,
                     )
                   }
-                  className={`min-h-[90px] rounded-3xl p-6 text-2xl font-black
+                  className={`min-h-[90px] rounded-3xl p-6 text-2xl font-black transition-all duration-700 active:scale-95 disabled:opacity-50
                   ${
                     questionEnded &&
                     correctAnswer ===
@@ -415,6 +477,19 @@ export default function Home() {
               ),
             )}
           </div>
+
+          {lockedAnswer &&
+            !questionEnded && (
+              <div className="rounded-2xl bg-blue-600 p-5 text-center text-3xl font-black">
+                ANSWER LOCKED
+              </div>
+            )}
+
+          {questionEnded && (
+            <div className="rounded-2xl bg-gray-900 p-5 text-center text-3xl font-black">
+              TIME'S UP
+            </div>
+          )}
         </div>
       )}
     </main>

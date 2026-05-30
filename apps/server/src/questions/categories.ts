@@ -1,76 +1,41 @@
-export const questions = [
-  {
-    category: 'Кино',
-
-    text: 'Как зовут Бэтмена?',
-
-    answers: [
-      'Брюс Уэйн',
-      'Тони Старк',
-      'Питер Паркер',
-      'Кларк Кент',
-    ],
-
-    correct: 0,
+export const categoryStyles = {
+  Кино: {
+    color: '#ef4444',
+    icon: '🎬',
   },
 
-  {
-    category: 'Игры',
-
-    text: 'Какая компания создала Minecraft?',
-
-    answers: [
-      'Valve',
-      'Mojang',
-      'Rockstar',
-      'Epic Games',
-    ],
-
-    correct: 1,
+  Игры: {
+    color: '#22c55e',
+    icon: '🎮',
   },
 
-  {
-    category: 'Музыка',
-
-    text: 'Сколько участников было в группе The Beatles?',
-
-    answers: [
-      '3',
-      '4',
-      '5',
-      '6',
-    ],
-
-    correct: 1,
+  Мемы: {
+    color: '#ec4899',
+    icon: '😂',
   },
 
-  {
-    category: 'Аниме',
-
-    text: 'Кто был главным соперником Наруто?',
-
-    answers: [
-      'Саске',
-      'Леви',
-      'Гоку',
-      'Луффи',
-    ],
-
-    correct: 0,
+  Аниме: {
+    color: '#a855f7',
+    icon: '🟣',
   },
 
-  {
-    category: 'Мемы',
-
-    text: 'Как называют человека, который всегда говорит «ща сделаю»?',
-
-    answers: [
-      'Программист',
-      'Бариста',
-      'Фотограф',
-      'Диджей',
-    ],
-
-    correct: 0,
+  Музыка: {
+    color: '#3b82f6',
+    icon: '🎵',
   },
-];
+
+  Интернет: {
+    color: '#f59e0b',
+    icon: '🌐',
+  },
+
+  Сериалы: {
+    color: '#f97316',
+    icon: '📺',
+  },
+
+  Общее: {
+    color: '#94a3b8',
+    icon: '❓',
+  },
+};

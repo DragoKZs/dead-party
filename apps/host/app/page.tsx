@@ -1,48 +1,34 @@
 'use client';
 
-import {
-  useState,
-} from 'react';
-
-import QRCode from 'react-qr-code';
+import { useState } from 'react';
 
 import { io } from 'socket.io-client';
 
+import QRCode from 'react-qr-code';
+
 const socket = io(
   'https://dead-party-server.onrender.com',
-  {
-    reconnection: true,
-  },
 );
 
 export default function HostPage() {
   const [roomCode, setRoomCode] =
-    useState('');
+    useState('123');
 
   const [created, setCreated] =
     useState(false);
 
   const createRoom = () => {
-    if (!roomCode.trim())
-      return;
-
-    socket.emit(
-      'createRoom',
-      {
-        roomCode,
-      },
-    );
+    socket.emit('createRoom', {
+      roomCode,
+    });
 
     setCreated(true);
   };
 
   const startGame = () => {
-    socket.emit(
-      'startGame',
-      {
-        roomCode,
-      },
-    );
+    socket.emit('startGame', {
+      roomCode,
+    });
   };
 
   const nextQuestion = () => {
@@ -55,12 +41,9 @@ export default function HostPage() {
   };
 
   const pauseGame = () => {
-    socket.emit(
-      'pauseGame',
-      {
-        roomCode,
-      },
-    );
+    socket.emit('pauseGame', {
+      roomCode,
+    });
   };
 
   const resumeGame = () => {
@@ -72,25 +55,27 @@ export default function HostPage() {
     );
   };
 
-  const speedRound = () => {
-    socket.emit(
-      'forceSpeedRound',
-      {
-        roomCode,
-      },
-    );
-  };
+  const forceSpeedRound =
+    () => {
+      socket.emit(
+        'forceSpeedRound',
+        {
+          roomCode,
+        },
+      );
+    };
 
-  const blackoutRound = () => {
-    socket.emit(
-      'forceBlackoutRound',
-      {
-        roomCode,
-      },
-    );
-  };
+  const forceBlackoutRound =
+    () => {
+      socket.emit(
+        'forceBlackoutRound',
+        {
+          roomCode,
+        },
+      );
+    };
 
-  const lastChanceRound =
+  const forceLastChanceRound =
     () => {
       socket.emit(
         'forceLastChanceRound',
@@ -100,13 +85,13 @@ export default function HostPage() {
       );
     };
 
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
-      <h1 className="mb-10 text-7xl font-black text-red-600">
-        HOST
-      </h1>
+  if (!created) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white">
+        <h1 className="mb-10 text-7xl font-black text-red-600">
+          HOST PANEL
+        </h1>
 
-      {!created ? (
         <div className="flex flex-col gap-4">
           <input
             type="text"
@@ -116,7 +101,6 @@ export default function HostPage() {
                 e.target.value,
               )
             }
-            placeholder="ROOM CODE"
             className="rounded-2xl bg-gray-900 p-5 text-3xl outline-none"
           />
 
@@ -127,76 +111,86 @@ export default function HostPage() {
             CREATE ROOM
           </button>
         </div>
-      ) : (
-        <div className="flex flex-col items-center gap-4">
-          <div className="text-center text-5xl font-black">
-            ROOM:{' '}
-            {roomCode}
-          </div>
+      </main>
+    );
+  }
 
-          <div className="rounded-3xl bg-white p-4">
-            <QRCode
-              value={`https://https://player-gilt-xi.vercel.app?room=${roomCode}`}
-              size={220}
-            />
-          </div>
-
-          <button
-            onClick={startGame}
-            className="w-full rounded-2xl bg-green-600 p-5 text-3xl font-black"
-          >
-            START GAME
-          </button>
-
-          <button
-            onClick={nextQuestion}
-            className="w-full rounded-2xl bg-blue-600 p-5 text-3xl font-black"
-          >
-            NEXT QUESTION
-          </button>
-
-          <button
-            onClick={pauseGame}
-            className="w-full rounded-2xl bg-yellow-500 p-5 text-3xl font-black text-black"
-          >
-            PAUSE
-          </button>
-
-          <button
-            onClick={
-              resumeGame
-            }
-            className="w-full rounded-2xl bg-purple-600 p-5 text-3xl font-black"
-          >
-            RESUME
-          </button>
-
-          <button
-            onClick={speedRound}
-            className="w-full rounded-2xl bg-orange-500 p-5 text-3xl font-black"
-          >
-            ⚡ SPEED ROUND
-          </button>
-
-          <button
-            onClick={
-              blackoutRound
-            }
-            className="w-full rounded-2xl bg-white p-5 text-3xl font-black text-black"
-          >
-            🌑 BLACKOUT
-          </button>
-
-          <button
-            onClick={
-              lastChanceRound
-            }
-            className="w-full rounded-2xl bg-red-800 p-5 text-3xl font-black"
-          >
-            ☠ LAST CHANCE
-          </button>
+  return (
+    <main className="min-h-screen bg-black p-10 text-white">
+      <div className="mb-10">
+        <div className="text-3xl text-gray-400">
+          ROOM
         </div>
-      )}
+
+        <div className="text-8xl font-black text-red-600">
+          {roomCode}
+        </div>
+
+        <div className="mt-8 w-fit rounded-3xl bg-white p-6">
+          <QRCode
+            value={`http://https://player-gilt-xi.vercel.app?room=${roomCode}`}
+            size={220}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <button
+          onClick={startGame}
+          className="rounded-3xl bg-green-600 p-10 text-4xl font-black"
+        >
+          START GAME
+        </button>
+
+        <button
+          onClick={nextQuestion}
+          className="rounded-3xl bg-blue-600 p-10 text-4xl font-black"
+        >
+          NEXT QUESTION
+        </button>
+
+        <button
+          onClick={pauseGame}
+          className="rounded-3xl bg-yellow-500 p-10 text-4xl font-black text-black"
+        >
+          PAUSE
+        </button>
+
+        <button
+          onClick={resumeGame}
+          className="rounded-3xl bg-orange-500 p-10 text-4xl font-black"
+        >
+          RESUME
+        </button>
+
+        <button
+          onClick={
+            forceSpeedRound
+          }
+          className="rounded-3xl bg-red-600 p-10 text-3xl font-black"
+        >
+          ⚡ FORCE SPEED
+        </button>
+
+        <button
+          onClick={
+            forceBlackoutRound
+          }
+          className="rounded-3xl bg-gray-700 p-10 text-3xl font-black"
+        >
+          🌑 FORCE BLACKOUT
+        </button>
+
+        <button
+          onClick={
+            forceLastChanceRound
+          }
+          className="col-span-2 rounded-3xl bg-red-950 p-10 text-4xl font-black"
+        >
+          ☠ FORCE LAST
+          CHANCE
+        </button>
+      </div>
     </main>
   );
 }

@@ -22,18 +22,185 @@ export class GameGateway {
   @WebSocketServer()
   server: Server;
 
-  startQuestion(
+  setPhase(
+    roomCode: string,
+    phase: string,
+  ) {
+    const room = rooms[roomCode];
+
+    room.phase = phase;
+
+    this.server.to(roomCode).emit(
+      'phaseChanged',
+      {
+        phase,
+      },
+    );
+  }
+
+  finishQuestion(
     roomCode: string,
   ) {
     const room = rooms[roomCode];
 
-    if (!room) return;
+    clearInterval(room.timer);
+
+    room.questionActive = false;
+
+    room.players.forEach(
+      (player: any) => {
+        const isCorrect =
+          player.selectedAnswer ===
+          room.currentQuestion
+            .correct;
+
+        player.lastResult =
+          isCorrect;
+
+        if (
+          room.isLastChanceRound
+        ) {
+          if (isCorrect) {
+            if (
+              player.lives <= 0
+            ) {
+              player.lives = 1;
+            } else if (
+              player.lives >= 3
+            ) {
+              player.score += 100;
+            } else {
+              player.lives += 1;
+
+              if (
+                player.lives > 3
+              ) {
+                player.lives = 3;
+              }
+            }
+          }
+
+          return;
+        }
+
+        if (isCorrect) {
+          player.score +=
+            room.isSpeedRound
+              ? 200
+              : 100;
+        } else {
+          player.lives -= 1;
+
+          if (
+            player.lives < 0
+          ) {
+            player.lives = 0;
+          }
+        }
+      },
+    );
+
+    this.setPhase(
+      roomCode,
+      'REVEAL',
+    );
+
+    this.server.to(roomCode).emit(
+      'questionEnded',
+      {
+        correct:
+          room.currentQuestion
+            .correct,
+      },
+    );
+
+    setTimeout(() => {
+      this.setPhase(
+        roomCode,
+        'LEADERBOARD',
+      );
+
+      this.server.to(
+        roomCode,
+      ).emit(
+        'playersUpdated',
+        {
+          players:
+            room.players,
+        },
+      );
+    }, 3000);
+  }
+
+  checkAllAnswered(
+    roomCode: string,
+  ) {
+    const room = rooms[roomCode];
+
+    const allAnswered =
+      room.players.every(
+        (p: any) =>
+          p.hasAnswered,
+      );
+
+    if (
+      allAnswered &&
+      room.players.length > 0
+    ) {
+      room.timeLeft = 0;
+
+      this.server.to(
+        roomCode,
+      ).emit('timerUpdate', {
+        timeLeft: 0,
+      });
+
+      this.finishQuestion(
+        roomCode,
+      );
+    }
+  }
+
+  createTimer(
+    roomCode: string,
+  ) {
+    const room = rooms[roomCode];
+
+    room.timer = setInterval(() => {
+      if (room.paused)
+        return;
+
+      room.timeLeft--;
+
+      this.server.to(
+        roomCode,
+      ).emit('timerUpdate', {
+        timeLeft:
+          room.timeLeft,
+      });
+
+      if (
+        room.timeLeft <= 0
+      ) {
+        this.finishQuestion(
+          roomCode,
+        );
+      }
+    }, 1000);
+  }
+
+  startQuestion(
+    roomCode: string,
+  ) {
+    const room = rooms[roomCode];
 
     clearInterval(room.timer);
 
     room.questionActive = true;
 
     room.paused = false;
+
+    room.roundCount++;
 
     room.isSpeedRound =
       room.forceSpeedRound ||
@@ -45,7 +212,8 @@ export class GameGateway {
 
     room.isLastChanceRound =
       room.forceLastChanceRound ||
-      Math.random() < 0.15;
+      room.roundCount % 5 ===
+        0;
 
     room.forceSpeedRound =
       false;
@@ -84,10 +252,16 @@ export class GameGateway {
       },
     );
 
+    this.setPhase(
+      roomCode,
+      'ROUND_INTRO',
+    );
+
     this.server.to(roomCode).emit(
-      'questionStarted',
+      'roundIntro',
       {
-        ...room.currentQuestion,
+        category:
+          randomQuestion.category,
 
         isSpeedRound:
           room.isSpeedRound,
@@ -100,141 +274,47 @@ export class GameGateway {
       },
     );
 
-    this.server.to(roomCode).emit(
-      'timerUpdate',
-      {
-        timeLeft:
-          room.timeLeft,
-      },
-    );
-
-    this.server.to(roomCode).emit(
-      'gameState',
-      {
-        paused: false,
-      },
-    );
-
-    room.timer = setInterval(() => {
-      if (room.paused)
-        return;
-
-      room.timeLeft--;
-
-      this.server.to(
+    setTimeout(() => {
+      this.setPhase(
         roomCode,
-      ).emit('timerUpdate', {
-        timeLeft:
-          room.timeLeft,
-      });
+        'QUESTION',
+      );
 
-      const allAnswered =
-        room.players.every(
-          (p: any) =>
-            p.hasAnswered,
-        );
+      this.server.to(roomCode).emit(
+        'questionStarted',
+        {
+          ...room.currentQuestion,
 
-      if (
-        allAnswered &&
-        room.players.length > 0
-      ) {
-        room.timeLeft = 0;
-      }
+          isSpeedRound:
+            room.isSpeedRound,
 
-      if (
-        room.timeLeft <= 0
-      ) {
-        clearInterval(
-          room.timer,
-        );
+          isBlackoutRound:
+            room.isBlackoutRound,
 
-        room.questionActive = false;
+          isLastChanceRound:
+            room.isLastChanceRound,
+        },
+      );
 
-        room.players.forEach(
-          (player: any) => {
-            const isCorrect =
-              player.selectedAnswer ===
-              room.currentQuestion
-                .correct;
+      this.server.to(roomCode).emit(
+        'timerUpdate',
+        {
+          timeLeft:
+            room.timeLeft,
+        },
+      );
 
-            player.lastResult =
-              isCorrect;
+      this.server.to(roomCode).emit(
+        'gameState',
+        {
+          paused: false,
+        },
+      );
 
-            if (
-              room.isLastChanceRound
-            ) {
-              if (
-                isCorrect
-              ) {
-                if (
-                  player.lives <=
-                  0
-                ) {
-                  player.lives = 1;
-                } else if (
-                  player.lives >=
-                  3
-                ) {
-                  player.score += 100;
-                } else {
-                  player.lives += 1;
-
-                  if (
-                    player.lives >
-                    3
-                  ) {
-                    player.lives = 3;
-                  }
-                }
-              }
-
-              return;
-            }
-
-            if (
-              isCorrect
-            ) {
-              player.score +=
-                room.isSpeedRound
-                  ? 200
-                  : 100;
-            } else {
-              player.lives -= 1;
-
-              if (
-                player.lives < 0
-              ) {
-                player.lives = 0;
-              }
-            }
-          },
-        );
-
-        this.server.to(
-          roomCode,
-        ).emit(
-          'questionEnded',
-          {
-            correct:
-              room
-                .currentQuestion
-                .correct,
-          },
-        );
-
-        setTimeout(() => {
-          this.server.to(
-            roomCode,
-          ).emit(
-            'playersUpdated',
-            {
-              players:
-                room.players,
-            },
-          );
-        }, 3000);
-      }
-    }, 1000);
+      this.createTimer(
+        roomCode,
+      );
+    }, 2500);
   }
 
   @SubscribeMessage(
@@ -249,7 +329,21 @@ export class GameGateway {
     const { roomCode } =
       data;
 
+    if (rooms[roomCode]) {
+      client.emit(
+        'roomError',
+        {
+          message:
+            'Room already exists',
+        },
+      );
+
+      return;
+    }
+
     rooms[roomCode] = {
+      hostId: client.id,
+
       players: [],
 
       timer: null,
@@ -262,11 +356,15 @@ export class GameGateway {
 
       currentQuestion: null,
 
+      phase: 'LOBBY',
+
       isSpeedRound: false,
 
       isBlackoutRound: false,
 
       isLastChanceRound: false,
+
+      roundCount: 0,
 
       forceSpeedRound: false,
 
@@ -361,7 +459,20 @@ export class GameGateway {
   handleStartGame(
     @MessageBody()
     data: any,
+    @ConnectedSocket()
+    client: Socket,
   ) {
+    const room =
+      rooms[data.roomCode];
+
+    if (!room) return;
+
+    if (
+      room.hostId !==
+      client.id
+    )
+      return;
+
     this.startQuestion(
       data.roomCode,
     );
@@ -373,7 +484,20 @@ export class GameGateway {
   handleNextQuestion(
     @MessageBody()
     data: any,
+    @ConnectedSocket()
+    client: Socket,
   ) {
+    const room =
+      rooms[data.roomCode];
+
+    if (!room) return;
+
+    if (
+      room.hostId !==
+      client.id
+    )
+      return;
+
     this.startQuestion(
       data.roomCode,
     );
@@ -385,11 +509,19 @@ export class GameGateway {
   handlePauseGame(
     @MessageBody()
     data: any,
+    @ConnectedSocket()
+    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
 
     if (!room) return;
+
+    if (
+      room.hostId !==
+      client.id
+    )
+      return;
 
     room.paused = true;
 
@@ -406,11 +538,19 @@ export class GameGateway {
   handleResumeGame(
     @MessageBody()
     data: any,
+    @ConnectedSocket()
+    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
 
     if (!room) return;
+
+    if (
+      room.hostId !==
+      client.id
+    )
+      return;
 
     room.paused = false;
 
@@ -427,6 +567,8 @@ export class GameGateway {
   handleForceSpeedRound(
     @MessageBody()
     data: any,
+    @ConnectedSocket()
+    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
@@ -443,6 +585,8 @@ export class GameGateway {
   handleForceBlackoutRound(
     @MessageBody()
     data: any,
+    @ConnectedSocket()
+    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
@@ -459,6 +603,8 @@ export class GameGateway {
   handleForceLastChanceRound(
     @MessageBody()
     data: any,
+    @ConnectedSocket()
+    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
@@ -513,6 +659,10 @@ export class GameGateway {
 
     client.emit(
       'answerLocked',
+    );
+
+    this.checkAllAnswered(
+      data.roomCode,
     );
   }
 }
