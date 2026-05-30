@@ -128,7 +128,7 @@ export default function HostPage() {
 
         <div className="mt-8 w-fit rounded-3xl bg-white p-6">
           <QRCode
-            value={`http://localhost:3001?room=${roomCode}`}
+            value={`https://player-gilt-xi.vercel.app/?room=${roomCode}`}
             size={220}
           />
         </div>

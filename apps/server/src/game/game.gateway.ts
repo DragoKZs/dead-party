@@ -15,6 +15,7 @@ const rooms: any = {};
 @WebSocketGateway({
   cors: {
     origin: '*',
+    credentials: true,
   },
 })
 export class GameGateway {
@@ -524,11 +525,6 @@ export class GameGateway {
 
     room.paused = true;
 
-    this.setPhase(
-      data.roomCode,
-      'PAUSED',
-    );
-
     this.server.to(
       data.roomCode,
     ).emit('gameState', {
@@ -558,11 +554,6 @@ export class GameGateway {
 
     room.paused = false;
 
-    this.setPhase(
-      data.roomCode,
-      'QUESTION',
-    );
-
     this.server.to(
       data.roomCode,
     ).emit('gameState', {
@@ -584,12 +575,6 @@ export class GameGateway {
 
     if (!room) return;
 
-    if (
-      room.hostId !==
-      client.id
-    )
-      return;
-
     room.forceSpeedRound =
       true;
   }
@@ -608,12 +593,6 @@ export class GameGateway {
 
     if (!room) return;
 
-    if (
-      room.hostId !==
-      client.id
-    )
-      return;
-
     room.forceBlackoutRound =
       true;
   }
@@ -631,12 +610,6 @@ export class GameGateway {
       rooms[data.roomCode];
 
     if (!room) return;
-
-    if (
-      room.hostId !==
-      client.id
-    )
-      return;
 
     room.forceLastChanceRound =
       true;
