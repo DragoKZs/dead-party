@@ -32,6 +32,8 @@ export class GameGateway {
   ) {
     const room = rooms[roomCode];
 
+    if (!room) return;
+
     room.phase = phase;
 
     this.server.to(roomCode).emit(
@@ -46,6 +48,8 @@ export class GameGateway {
     roomCode: string,
   ) {
     const room = rooms[roomCode];
+
+    if (!room) return;
 
     clearInterval(room.timer);
 
@@ -141,6 +145,8 @@ export class GameGateway {
   ) {
     const room = rooms[roomCode];
 
+    if (!room) return;
+
     const allAnswered =
       room.players.every(
         (p: any) =>
@@ -170,6 +176,8 @@ export class GameGateway {
   ) {
     const room = rooms[roomCode];
 
+    if (!room) return;
+
     room.timer = setInterval(() => {
       if (room.paused)
         return;
@@ -197,6 +205,8 @@ export class GameGateway {
     roomCode: string,
   ) {
     const room = rooms[roomCode];
+
+    if (!room) return;
 
     clearInterval(room.timer);
 
@@ -338,17 +348,10 @@ export class GameGateway {
     const { roomCode } =
       data;
 
-    if (rooms[roomCode]) {
-      client.emit(
-        'roomError',
-        {
-          message:
-            'Room already exists',
-        },
-      );
-
-      return;
-    }
+    console.log(
+      'CREATE ROOM:',
+      roomCode,
+    );
 
     rooms[roomCode] = {
       players: [],
@@ -380,6 +383,13 @@ export class GameGateway {
       forceLastChanceRound: false,
     };
 
+    console.log(
+      'ROOMS AFTER CREATE:',
+      Object.keys(
+        rooms,
+      ),
+    );
+
     client.join(roomCode);
 
     client.emit(
@@ -404,10 +414,26 @@ export class GameGateway {
       playerName,
     } = data;
 
+    console.log(
+      'JOIN ROOM:',
+      roomCode,
+    );
+
+    console.log(
+      'AVAILABLE ROOMS:',
+      Object.keys(
+        rooms,
+      ),
+    );
+
     const room =
       rooms[roomCode];
 
     if (!room) {
+      console.log(
+        'ROOM NOT FOUND',
+      );
+
       client.emit(
         'roomError',
         {
@@ -436,6 +462,11 @@ export class GameGateway {
 
       lastResult: null,
     });
+
+    console.log(
+      'PLAYER JOINED:',
+      playerName,
+    );
 
     this.server.to(roomCode).emit(
       'playersUpdated',
