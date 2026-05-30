@@ -10,6 +10,8 @@ import { Server, Socket } from 'socket.io';
 
 import { questions } from '../questions/questions';
 
+import { categoryStyles } from '../questions/categories';
+
 const rooms: any = {};
 
 @WebSocketGateway({
@@ -17,6 +19,8 @@ const rooms: any = {};
     origin: '*',
     credentials: true,
   },
+
+  transports: ['websocket'],
 })
 export class GameGateway {
   @WebSocketServer()
@@ -263,6 +267,11 @@ export class GameGateway {
         category:
           randomQuestion.category,
 
+        style:
+          categoryStyles[
+            randomQuestion.category
+          ],
+
         isSpeedRound:
           room.isSpeedRound,
 
@@ -342,8 +351,6 @@ export class GameGateway {
     }
 
     rooms[roomCode] = {
-      hostId: client.id,
-
       players: [],
 
       timer: null,
@@ -459,19 +466,11 @@ export class GameGateway {
   handleStartGame(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
 
     if (!room) return;
-
-    if (
-      room.hostId !==
-      client.id
-    )
-      return;
 
     this.startQuestion(
       data.roomCode,
@@ -484,19 +483,11 @@ export class GameGateway {
   handleNextQuestion(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
 
     if (!room) return;
-
-    if (
-      room.hostId !==
-      client.id
-    )
-      return;
 
     this.startQuestion(
       data.roomCode,
@@ -509,19 +500,11 @@ export class GameGateway {
   handlePauseGame(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
 
     if (!room) return;
-
-    if (
-      room.hostId !==
-      client.id
-    )
-      return;
 
     room.paused = true;
 
@@ -538,19 +521,11 @@ export class GameGateway {
   handleResumeGame(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
 
     if (!room) return;
-
-    if (
-      room.hostId !==
-      client.id
-    )
-      return;
 
     room.paused = false;
 
@@ -567,8 +542,6 @@ export class GameGateway {
   handleForceSpeedRound(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
@@ -585,8 +558,6 @@ export class GameGateway {
   handleForceBlackoutRound(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
@@ -603,8 +574,6 @@ export class GameGateway {
   handleForceLastChanceRound(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
