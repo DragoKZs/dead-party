@@ -21,7 +21,7 @@ const socket = io(
   },
 );
 
-const randomEmojis = [
+const emojiAvatars = [
   '😈',
   '👻',
   '🤖',
@@ -34,7 +34,20 @@ const randomEmojis = [
   '🐸',
 ];
 
+type GameMode =
+  | 'menu'
+  | 'quiz'
+  | 'reaction-wait'
+  | 'reaction-active'
+  | 'reaction-finished'
+  | 'maze';
+
 export default function Home() {
+  const [mode, setMode] =
+    useState<GameMode>(
+      'menu',
+    );
+
   const [joined, setJoined] =
     useState(false);
 
@@ -46,6 +59,11 @@ export default function Home() {
 
   const [playerName, setPlayerName] =
     useState('');
+
+  const [
+    telegramAvatar,
+    setTelegramAvatar,
+  ] = useState('');
 
   const [avatar, setAvatar] =
     useState('');
@@ -72,9 +90,9 @@ export default function Home() {
   );
 
   const [
-    mazeActive,
-    setMazeActive,
-  ] = useState(false);
+    reactionWinner,
+    setReactionWinner,
+  ] = useState<any>(null);
 
   const [maze, setMaze] =
     useState<number[][]>(
@@ -111,10 +129,10 @@ export default function Home() {
 
   const randomEmoji =
     useMemo(() => {
-      return randomEmojis[
+      return emojiAvatars[
         Math.floor(
           Math.random() *
-            randomEmojis.length,
+            emojiAvatars.length,
         )
       ];
     }, []);
@@ -151,6 +169,10 @@ export default function Home() {
         if (
           user.photo_url
         ) {
+          setTelegramAvatar(
+            user.photo_url,
+          );
+
           setAvatar(
             user.photo_url,
           );
@@ -189,9 +211,7 @@ export default function Home() {
     socket.on(
       'questionStarted',
       (data) => {
-        setMazeActive(
-          false,
-        );
+        setMode('quiz');
 
         setQuestion(data);
 
@@ -202,6 +222,10 @@ export default function Home() {
         );
 
         setLocked(false);
+
+        setReactionWinner(
+          null,
+        );
       },
     );
 
@@ -248,13 +272,44 @@ export default function Home() {
     );
 
     socket.on(
+      'reactionWaiting',
+      () => {
+        setQuestion(null);
+
+        setMode(
+          'reaction-wait',
+        );
+      },
+    );
+
+    socket.on(
+      'reactionStarted',
+      () => {
+        setMode(
+          'reaction-active',
+        );
+      },
+    );
+
+    socket.on(
+      'reactionEnded',
+      (data) => {
+        setReactionWinner(
+          data.winner,
+        );
+
+        setMode(
+          'reaction-finished',
+        );
+      },
+    );
+
+    socket.on(
       'mazeStarted',
       (data) => {
         setQuestion(null);
 
-        setMazeActive(
-          true,
-        );
+        setMode('maze');
 
         setMaze(
           data.maze,
@@ -301,9 +356,7 @@ export default function Home() {
     socket.on(
       'mazeEnded',
       () => {
-        setMazeActive(
-          false,
-        );
+        setMode('menu');
       },
     );
 
@@ -341,6 +394,18 @@ export default function Home() {
 
       socket.off(
         'achievement',
+      );
+
+      socket.off(
+        'reactionWaiting',
+      );
+
+      socket.off(
+        'reactionStarted',
+      );
+
+      socket.off(
+        'reactionEnded',
       );
 
       socket.off(
@@ -394,6 +459,16 @@ export default function Home() {
     );
   };
 
+  const reactionClick =
+    () => {
+      socket.emit(
+        'reactionClick',
+        {
+          roomCode,
+        },
+      );
+    };
+
   const move = (
     direction:
       | 'up'
@@ -415,6 +490,60 @@ export default function Home() {
     );
   };
 
+  const uploadAvatar =
+    (
+      e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+      const file =
+        e.target.files?.[0];
+
+      if (!file)
+        return;
+
+      const reader =
+        new FileReader();
+
+      reader.onload =
+        () => {
+          if (
+            typeof reader.result ===
+            'string'
+          ) {
+            setAvatar(
+              reader.result,
+            );
+          }
+        };
+
+      reader.readAsDataURL(
+        file,
+      );
+    };
+
+  const setRandomEmoji =
+    () => {
+      const random =
+        emojiAvatars[
+          Math.floor(
+            Math.random() *
+              emojiAvatars.length,
+          )
+        ];
+
+      setAvatar(random);
+    };
+
+  const restoreTelegramAvatar =
+    () => {
+      if (
+        telegramAvatar
+      ) {
+        setAvatar(
+          telegramAvatar,
+        );
+      }
+    };
+
   if (!joined) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
@@ -423,19 +552,56 @@ export default function Home() {
         </div>
 
         <div className="mb-6">
-          {avatar.startsWith(
+          {avatar?.startsWith(
+            'data:image',
+          ) ||
+          avatar?.startsWith(
             'http',
           ) ? (
             <img
               src={avatar}
               alt="avatar"
-              className="h-28 w-28 rounded-full border-4 border-red-500 object-cover"
+              className="h-32 w-32 rounded-full border-4 border-red-500 object-cover"
             />
           ) : (
-            <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-red-500 bg-gray-900 text-6xl">
+            <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-red-500 bg-gray-900 text-7xl">
               {avatar}
             </div>
           )}
+        </div>
+
+        <div className="mb-6 flex flex-wrap justify-center gap-3">
+          <button
+            onClick={
+              setRandomEmoji
+            }
+            className="rounded-2xl bg-gray-900 px-5 py-3 text-xl font-black"
+          >
+            🎲 ЭМОДЗИ
+          </button>
+
+          {telegramAvatar && (
+            <button
+              onClick={
+                restoreTelegramAvatar
+              }
+              className="rounded-2xl bg-blue-600 px-5 py-3 text-xl font-black"
+            >
+              📸 TELEGRAM
+            </button>
+          )}
+
+          <label className="cursor-pointer rounded-2xl bg-green-600 px-5 py-3 text-xl font-black">
+            🖼 ЗАГРУЗИТЬ
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={
+                uploadAvatar
+              }
+            />
+          </label>
         </div>
 
         <div className="flex w-full max-w-sm flex-col gap-4">
@@ -474,7 +640,76 @@ export default function Home() {
     );
   }
 
-  if (mazeActive) {
+  if (
+    mode ===
+    'reaction-wait'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black text-white">
+        <div className="absolute inset-0 animate-pulse bg-red-950 opacity-30" />
+
+        <div className="relative z-10 text-center">
+          <div className="mb-10 animate-spin text-9xl">
+            ⚡
+          </div>
+
+          <div className="animate-pulse text-6xl font-black">
+            ГОТОВЬТЕСЬ...
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (
+    mode ===
+    'reaction-active'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-red-950 text-white">
+        <button
+          onClick={
+            reactionClick
+          }
+          className="flex h-[320px] w-[320px] items-center justify-center rounded-full bg-red-600 text-[120px] shadow-[0_0_80px_rgba(255,0,0,0.9)] active:scale-95"
+        >
+          ⚡
+        </button>
+
+        <div className="mt-10 animate-pulse text-5xl font-black">
+          ЖМИ!!!
+        </div>
+      </main>
+    );
+  }
+
+  if (
+    mode ===
+      'reaction-finished' &&
+    reactionWinner
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white">
+        <div className="mb-8 text-8xl">
+          ⚡
+        </div>
+
+        <div className="mb-5 text-5xl font-black text-yellow-400">
+          САМЫЙ БЫСТРЫЙ
+        </div>
+
+        <div className="text-6xl font-black text-red-500">
+          {
+            reactionWinner.name
+          }
+        </div>
+      </main>
+    );
+  }
+
+  if (
+    mode === 'maze'
+  ) {
     return (
       <main className="flex min-h-screen flex-col items-center bg-black p-4 text-white">
         {notification && (
@@ -489,32 +724,20 @@ export default function Home() {
             {mazeDifficulty.toUpperCase()}
           </div>
 
-          <div
-            className={`text-5xl font-black
-            ${
-              mazeTimer <= 10
-                ? 'animate-pulse text-red-500'
-                : 'text-yellow-400'
-            }`}
-          >
+          <div className="text-5xl font-black text-yellow-400">
             ⏳ {mazeTimer}
           </div>
         </div>
 
         {mazeFinished ? (
           <div className="flex flex-1 flex-col items-center justify-center text-center">
-            <div className="mb-8 animate-bounce text-9xl">
+            <div className="mb-8 text-9xl">
               ❤️
             </div>
 
-            <div className="mb-4 text-5xl font-black text-green-400">
+            <div className="text-5xl font-black text-green-400">
               ЛАБИРИНТ
               ПРОЙДЕН
-            </div>
-
-            <div className="text-2xl text-gray-400">
-              Ожидайте
-              остальных игроков
             </div>
           </div>
         ) : (
@@ -573,7 +796,7 @@ export default function Home() {
                 onClick={() =>
                   move('up')
                 }
-                className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl font-black active:scale-90"
+                className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
               >
                 ⬆
               </button>
@@ -585,7 +808,7 @@ export default function Home() {
                       'left',
                     )
                   }
-                  className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl font-black active:scale-90"
+                  className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
                 >
                   ⬅
                 </button>
@@ -596,7 +819,7 @@ export default function Home() {
                       'down',
                     )
                   }
-                  className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl font-black active:scale-90"
+                  className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
                 >
                   ⬇
                 </button>
@@ -607,7 +830,7 @@ export default function Home() {
                       'right',
                     )
                   }
-                  className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl font-black active:scale-90"
+                  className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
                 >
                   ➡
                 </button>
@@ -651,9 +874,7 @@ export default function Home() {
               ) => (
                 <button
                   key={index}
-                  disabled={
-                    locked
-                  }
+                  disabled={locked}
                   onClick={() =>
                     submitAnswer(
                       index,

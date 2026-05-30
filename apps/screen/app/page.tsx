@@ -15,7 +15,20 @@ const socket = io(
   },
 );
 
+type ScreenMode =
+  | 'idle'
+  | 'quiz'
+  | 'reaction-wait'
+  | 'reaction-active'
+  | 'reaction-finished'
+  | 'maze';
+
 export default function ScreenPage() {
+  const [mode, setMode] =
+    useState<ScreenMode>(
+      'idle',
+    );
+
   const [roomCode, setRoomCode] =
     useState('');
 
@@ -26,9 +39,29 @@ export default function ScreenPage() {
     useState<any[]>([]);
 
   const [
-    mazeActive,
-    setMazeActive,
+    question,
+    setQuestion,
+  ] = useState<any>(null);
+
+  const [timeLeft, setTimeLeft] =
+    useState(0);
+
+  const [
+    questionEnded,
+    setQuestionEnded,
   ] = useState(false);
+
+  const [
+    correctAnswer,
+    setCorrectAnswer,
+  ] = useState<number | null>(
+    null,
+  );
+
+  const [
+    reactionWinner,
+    setReactionWinner,
+  ] = useState<any>(null);
 
   const [mazeTimer, setMazeTimer] =
     useState(45);
@@ -52,26 +85,6 @@ export default function ScreenPage() {
     total: 0,
   });
 
-  const [
-    question,
-    setQuestion,
-  ] = useState<any>(null);
-
-  const [timeLeft, setTimeLeft] =
-    useState(0);
-
-  const [
-    questionEnded,
-    setQuestionEnded,
-  ] = useState(false);
-
-  const [
-    correctAnswer,
-    setCorrectAnswer,
-  ] = useState<number | null>(
-    null,
-  );
-
   useEffect(() => {
     socket.on(
       'playersUpdated',
@@ -85,15 +98,17 @@ export default function ScreenPage() {
     socket.on(
       'questionStarted',
       (data) => {
-        setMazeActive(
-          false,
-        );
+        setMode('quiz');
 
         setQuestion(data);
 
         setQuestionEnded(false);
 
         setCorrectAnswer(
+          null,
+        );
+
+        setReactionWinner(
           null,
         );
       },
@@ -120,13 +135,44 @@ export default function ScreenPage() {
     );
 
     socket.on(
+      'reactionWaiting',
+      () => {
+        setQuestion(null);
+
+        setMode(
+          'reaction-wait',
+        );
+      },
+    );
+
+    socket.on(
+      'reactionStarted',
+      () => {
+        setMode(
+          'reaction-active',
+        );
+      },
+    );
+
+    socket.on(
+      'reactionEnded',
+      (data) => {
+        setReactionWinner(
+          data.winner,
+        );
+
+        setMode(
+          'reaction-finished',
+        );
+      },
+    );
+
+    socket.on(
       'mazeStarted',
       (data) => {
         setQuestion(null);
 
-        setMazeActive(
-          true,
-        );
+        setMode('maze');
 
         setMazeTimer(
           data.timer,
@@ -181,9 +227,7 @@ export default function ScreenPage() {
     socket.on(
       'mazeEnded',
       () => {
-        setMazeActive(
-          false,
-        );
+        setMode('idle');
       },
     );
 
@@ -202,6 +246,18 @@ export default function ScreenPage() {
 
       socket.off(
         'questionEnded',
+      );
+
+      socket.off(
+        'reactionWaiting',
+      );
+
+      socket.off(
+        'reactionStarted',
+      );
+
+      socket.off(
+        'reactionEnded',
       );
 
       socket.off(
@@ -287,7 +343,106 @@ export default function ScreenPage() {
     );
   }
 
-  if (mazeActive) {
+  if (
+    mode ===
+    'reaction-wait'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black text-white">
+        <div className="absolute inset-0 animate-pulse bg-red-950 opacity-30" />
+
+        <div className="relative z-10 text-center">
+          <div className="mb-10 animate-spin text-[180px]">
+            ⚡
+          </div>
+
+          <div className="animate-pulse text-[120px] font-black">
+            ГОТОВЬТЕСЬ...
+          </div>
+
+          <div className="mt-8 text-4xl text-gray-400">
+            НЕ НАЖИМАЙТЕ
+            РАНЬШЕ ВРЕМЕНИ
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (
+    mode ===
+    'reaction-active'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-red-950 text-white">
+        <div className="absolute inset-0 animate-pulse bg-red-600 opacity-20" />
+
+        <div className="relative z-10 text-center">
+          <div className="mb-12 animate-bounce text-[200px]">
+            ⚡
+          </div>
+
+          <div className="animate-pulse text-[160px] font-black text-white drop-shadow-[0_0_40px_rgba(255,0,0,0.9)]">
+            ЖМИ!!!
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (
+    mode ===
+      'reaction-finished' &&
+    reactionWinner
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black text-white">
+        <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/20 via-transparent to-transparent" />
+
+        <div className="relative z-10 text-center">
+          <div className="mb-10 animate-bounce text-[180px]">
+            ⚡
+          </div>
+
+          <div className="mb-6 text-7xl font-black text-yellow-400">
+            САМЫЙ БЫСТРЫЙ
+          </div>
+
+          <div className="mb-8 text-8xl font-black text-red-500">
+            {
+              reactionWinner.name
+            }
+          </div>
+
+          {reactionWinner.avatar?.startsWith(
+            'http',
+          ) ? (
+            <img
+              src={
+                reactionWinner.avatar
+              }
+              alt="avatar"
+              className="mx-auto h-56 w-56 rounded-full border-8 border-yellow-400 object-cover shadow-[0_0_80px_rgba(255,255,0,0.7)]"
+            />
+          ) : (
+            <div className="text-[200px]">
+              {
+                reactionWinner.avatar
+              }
+            </div>
+          )}
+
+          <div className="mt-10 text-5xl font-black text-yellow-400">
+            +150 ОЧКОВ
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (
+    mode === 'maze'
+  ) {
     return (
       <main className="relative min-h-screen overflow-hidden bg-black p-8 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,0,0,0.15),transparent_70%)]" />
@@ -481,13 +636,6 @@ export default function ScreenPage() {
               </div>
             </div>
           </div>
-
-          <div className="mt-10 text-center">
-            <div className="animate-pulse text-4xl font-black text-red-500">
-              ДОБЕРИТЕСЬ ДО
-              СЕРДЦА ❤️
-            </div>
-          </div>
         </div>
       </main>
     );
@@ -519,12 +667,12 @@ export default function ScreenPage() {
               ) => (
                 <div
                   key={index}
-                  className={`rounded-3xl p-10 text-center text-4xl font-black
+                  className={`rounded-3xl p-10 text-center text-4xl font-black transition-all duration-500
                   ${
                     questionEnded &&
                     correctAnswer ===
                       index
-                      ? 'bg-green-600'
+                      ? 'scale-105 bg-green-600 shadow-[0_0_40px_rgba(0,255,0,0.8)]'
                       : 'bg-red-600'
                   }`}
                 >
@@ -535,6 +683,91 @@ export default function ScreenPage() {
           </div>
         </div>
       )}
+
+      <div className="mt-10">
+        <div className="mb-6 text-5xl font-black">
+          🏆 ЛИДЕРЫ
+        </div>
+
+        <div className="flex flex-col gap-4">
+          {topPlayers.map(
+            (
+              player,
+              index,
+            ) => (
+              <div
+                key={
+                  player.id
+                }
+                className={`flex items-center justify-between rounded-3xl p-6 text-3xl font-black
+                ${
+                  player.lives <= 0
+                    ? 'bg-gray-900 opacity-30'
+                    : index ===
+                      0
+                    ? 'border-2 border-yellow-400 bg-yellow-500/10'
+                    : 'bg-gray-800'
+                }`}
+              >
+                <div className="flex items-center gap-5">
+                  <div className="text-4xl">
+                    #
+                    {index +
+                      1}
+                  </div>
+
+                  {player.avatar?.startsWith(
+                    'http',
+                  ) ? (
+                    <img
+                      src={
+                        player.avatar
+                      }
+                      alt="avatar"
+                      className="h-16 w-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="text-5xl">
+                      {
+                        player.avatar
+                      }
+                    </div>
+                  )}
+
+                  <div>
+                    {
+                      player.name
+                    }
+                  </div>
+                </div>
+
+                <div className="flex gap-8">
+                  <div>
+                    ❤️{' '}
+                    {
+                      player.lives
+                    }
+                  </div>
+
+                  <div>
+                    🏆{' '}
+                    {
+                      player.score
+                    }
+                  </div>
+
+                  <div>
+                    🔥{' '}
+                    {
+                      player.bestStreak
+                    }
+                  </div>
+                </div>
+              </div>
+            ),
+          )}
+        </div>
+      </div>
     </main>
   );
 }
