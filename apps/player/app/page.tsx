@@ -9,9 +9,17 @@ import { io } from 'socket.io-client';
 
 const socket = io(
   'ТВОЙ_RENDER_URL',
+  {
+    transports: [
+      'websocket',
+    ],
+  },
 );
 
 export default function Home() {
+  const [connected, setConnected] =
+    useState(false);
+
   const [playerName, setPlayerName] =
     useState('');
 
@@ -61,6 +69,30 @@ export default function Home() {
     isLastChanceRound,
     setIsLastChanceRound,
   ] = useState(false);
+
+  useEffect(() => {
+    socket.on(
+      'connect',
+      () => {
+        setConnected(true);
+      },
+    );
+
+    socket.on(
+      'disconnect',
+      () => {
+        setConnected(false);
+      },
+    );
+
+    return () => {
+      socket.off('connect');
+
+      socket.off(
+        'disconnect',
+      );
+    };
+  }, []);
 
   useEffect(() => {
     if (
@@ -148,6 +180,8 @@ export default function Home() {
       'roomError',
       (data) => {
         alert(data.message);
+
+        setJoined(false);
       },
     );
 
@@ -175,6 +209,14 @@ export default function Home() {
   }, []);
 
   const joinRoom = () => {
+    if (!connected) {
+      alert(
+        'Socket not connected yet',
+      );
+
+      return;
+    }
+
     if (
       !playerName.trim() ||
       !roomCode.trim()
@@ -214,6 +256,12 @@ export default function Home() {
           DEAD PARTY
         </h1>
 
+        <div className="mb-4 text-sm text-gray-500">
+          {connected
+            ? '🟢 Connected'
+            : '🔴 Connecting...'}
+        </div>
+
         <div className="flex w-full max-w-sm flex-col gap-4">
           <div>
             <div className="mb-2 text-sm font-bold text-gray-400">
@@ -252,8 +300,9 @@ export default function Home() {
           </div>
 
           <button
+            disabled={!connected}
             onClick={joinRoom}
-            className="mt-2 rounded-2xl bg-red-600 p-5 text-2xl font-black transition-all active:scale-95"
+            className="mt-2 rounded-2xl bg-red-600 p-5 text-2xl font-black transition-all active:scale-95 disabled:opacity-50"
           >
             JOIN ROOM
           </button>
@@ -321,12 +370,6 @@ export default function Home() {
             <div className="rounded-2xl bg-red-950 p-4 text-center text-2xl font-black text-white">
               ☠ LAST CHANCE
               ROUND
-              <div className="mt-2 text-lg text-gray-300">
-                ❤️ Recover lives
-                <br />
-                🏆 Or gain bonus
-                points
-              </div>
             </div>
           )}
 
