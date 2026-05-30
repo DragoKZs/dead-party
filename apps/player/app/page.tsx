@@ -8,7 +8,7 @@ import {
 import { io } from 'socket.io-client';
 
 const socket = io(
-  'ТВОЙ_RENDER_URL',
+  'https://dead-party-server.onrender.com',
   {
     transports: [
       'websocket',
