@@ -117,8 +117,6 @@ export default function Home() {
 
       miniApp.mount();
 
-      miniApp.requestFullscreen();
-
       const lp =
         retrieveLaunchParams();
 
