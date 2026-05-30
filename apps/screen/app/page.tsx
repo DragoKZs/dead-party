@@ -11,7 +11,7 @@ const socket = io(
   'https://dead-party-server.onrender.com',
   {
     reconnection: true,
-  }
+  },
 );
 
 export default function ScreenPage() {
@@ -30,13 +30,60 @@ export default function ScreenPage() {
   const [timeLeft, setTimeLeft] =
     useState(0);
 
+  const [
+    questionEnded,
+    setQuestionEnded,
+  ] = useState(false);
+
+  const [
+    correctAnswer,
+    setCorrectAnswer,
+  ] = useState<number | null>(
+    null,
+  );
+
+  const [
+    isSpeedRound,
+    setIsSpeedRound,
+  ] = useState(false);
+
+  const [
+    isBlackoutRound,
+    setIsBlackoutRound,
+  ] = useState(false);
+
+  const [
+    isLastChanceRound,
+    setIsLastChanceRound,
+  ] = useState(false);
+
   useEffect(() => {
     socket.on(
       'playersUpdated',
       (data) => {
-        setPlayers(
-          data.players,
-        );
+        const sorted =
+          [...data.players].sort(
+            (a, b) => {
+              if (
+                a.lives > 0 &&
+                b.lives <= 0
+              )
+                return -1;
+
+              if (
+                a.lives <= 0 &&
+                b.lives > 0
+              )
+                return 1;
+
+              return (
+                b.score -
+                a.score
+              );
+            },
+          );
+
+        setPlayers(sorted);
       },
     );
 
@@ -44,6 +91,22 @@ export default function ScreenPage() {
       'questionStarted',
       (data) => {
         setQuestion(data);
+
+        setQuestionEnded(false);
+
+        setCorrectAnswer(null);
+
+        setIsSpeedRound(
+          data.isSpeedRound,
+        );
+
+        setIsBlackoutRound(
+          data.isBlackoutRound,
+        );
+
+        setIsLastChanceRound(
+          data.isLastChanceRound,
+        );
       },
     );
 
@@ -52,6 +115,17 @@ export default function ScreenPage() {
       (data) => {
         setTimeLeft(
           data.timeLeft,
+        );
+      },
+    );
+
+    socket.on(
+      'questionEnded',
+      (data) => {
+        setQuestionEnded(true);
+
+        setCorrectAnswer(
+          data.correct,
         );
       },
     );
@@ -67,6 +141,10 @@ export default function ScreenPage() {
 
       socket.off(
         'timerUpdate',
+      );
+
+      socket.off(
+        'questionEnded',
       );
     };
   }, []);
@@ -113,16 +191,50 @@ export default function ScreenPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black p-10 text-white">
+    <main
+      className={`min-h-screen p-10 text-white transition-all
+      ${
+        isLastChanceRound
+          ? 'bg-red-950'
+          : isSpeedRound
+          ? 'bg-red-950'
+          : 'bg-black'
+      }`}
+    >
       <div className="mb-8 flex items-center justify-between">
         <div className="text-5xl font-black text-red-600">
           {roomCode}
         </div>
 
-        <div className="text-7xl font-black text-yellow-400">
+        <div
+          className={`text-7xl font-black
+          ${
+            timeLeft <= 3
+              ? 'animate-pulse text-red-500'
+              : 'text-yellow-400'
+          }`}
+        >
           {timeLeft}
         </div>
       </div>
+
+      {isSpeedRound && (
+        <div className="mb-6 rounded-3xl bg-yellow-400 p-6 text-center text-5xl font-black text-black">
+          ⚡ SPEED ROUND
+        </div>
+      )}
+
+      {isBlackoutRound && (
+        <div className="mb-6 rounded-3xl bg-white p-6 text-center text-5xl font-black text-black">
+          🌑 BLACKOUT
+        </div>
+      )}
+
+      {isLastChanceRound && (
+        <div className="mb-6 rounded-3xl bg-red-700 p-6 text-center text-5xl font-black">
+          ☠ LAST CHANCE
+        </div>
+      )}
 
       {question && (
         <div>
@@ -138,7 +250,21 @@ export default function ScreenPage() {
               ) => (
                 <div
                   key={index}
-                  className="rounded-3xl bg-red-600 p-10 text-center text-4xl font-black"
+                  className={`rounded-3xl p-10 text-center text-4xl font-black transition-all duration-700
+                  ${
+                    questionEnded &&
+                    correctAnswer ===
+                      index
+                      ? 'bg-green-600'
+                      : 'bg-red-600'
+                  }
+
+                  ${
+                    isBlackoutRound &&
+                    timeLeft <= 7
+                      ? 'opacity-0'
+                      : ''
+                  }`}
                 >
                   {answer}
                 </div>
@@ -161,18 +287,28 @@ export default function ScreenPage() {
             ) => (
               <div
                 key={player.id}
-                className="flex items-center justify-between rounded-3xl bg-gray-900 p-6 text-3xl font-black"
+                className={`flex items-center justify-between rounded-3xl p-6 text-3xl font-black
+                ${
+                  player.lives <= 0
+                    ? 'bg-gray-900 opacity-40'
+                    : 'bg-gray-800'
+                }`}
               >
                 <div>
                   #{index + 1}{' '}
                   {player.name}
                 </div>
 
-                <div>
-                  ❤️{' '}
-                  {player.lives}{' '}
-                  | 🏆{' '}
-                  {player.score}
+                <div className="flex gap-6">
+                  <div>
+                    ❤️{' '}
+                    {player.lives}
+                  </div>
+
+                  <div>
+                    🏆{' '}
+                    {player.score}
+                  </div>
                 </div>
               </div>
             ),

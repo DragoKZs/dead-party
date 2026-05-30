@@ -10,8 +10,6 @@ import { Server, Socket } from 'socket.io';
 
 import { questions } from '../questions/questions';
 
-import { categoryStyles } from '../questions/categories';
-
 const rooms: any = {};
 
 @WebSocketGateway({
@@ -19,187 +17,10 @@ const rooms: any = {};
     origin: '*',
     credentials: true,
   },
-
-  transports: ['websocket'],
 })
 export class GameGateway {
   @WebSocketServer()
   server: Server;
-
-  setPhase(
-    roomCode: string,
-    phase: string,
-  ) {
-    const room = rooms[roomCode];
-
-    if (!room) return;
-
-    room.phase = phase;
-
-    this.server.to(roomCode).emit(
-      'phaseChanged',
-      {
-        phase,
-      },
-    );
-  }
-
-  finishQuestion(
-    roomCode: string,
-  ) {
-    const room = rooms[roomCode];
-
-    if (!room) return;
-
-    clearInterval(room.timer);
-
-    room.questionActive = false;
-
-    room.players.forEach(
-      (player: any) => {
-        const isCorrect =
-          player.selectedAnswer ===
-          room.currentQuestion
-            .correct;
-
-        player.lastResult =
-          isCorrect;
-
-        if (
-          room.isLastChanceRound
-        ) {
-          if (isCorrect) {
-            if (
-              player.lives <= 0
-            ) {
-              player.lives = 1;
-            } else if (
-              player.lives >= 3
-            ) {
-              player.score += 100;
-            } else {
-              player.lives += 1;
-
-              if (
-                player.lives > 3
-              ) {
-                player.lives = 3;
-              }
-            }
-          }
-
-          return;
-        }
-
-        if (isCorrect) {
-          player.score +=
-            room.isSpeedRound
-              ? 200
-              : 100;
-        } else {
-          player.lives -= 1;
-
-          if (
-            player.lives < 0
-          ) {
-            player.lives = 0;
-          }
-        }
-      },
-    );
-
-    this.setPhase(
-      roomCode,
-      'REVEAL',
-    );
-
-    this.server.to(roomCode).emit(
-      'questionEnded',
-      {
-        correct:
-          room.currentQuestion
-            .correct,
-      },
-    );
-
-    setTimeout(() => {
-      this.setPhase(
-        roomCode,
-        'LEADERBOARD',
-      );
-
-      this.server.to(
-        roomCode,
-      ).emit(
-        'playersUpdated',
-        {
-          players:
-            room.players,
-        },
-      );
-    }, 3000);
-  }
-
-  checkAllAnswered(
-    roomCode: string,
-  ) {
-    const room = rooms[roomCode];
-
-    if (!room) return;
-
-    const allAnswered =
-      room.players.every(
-        (p: any) =>
-          p.hasAnswered,
-      );
-
-    if (
-      allAnswered &&
-      room.players.length > 0
-    ) {
-      room.timeLeft = 0;
-
-      this.server.to(
-        roomCode,
-      ).emit('timerUpdate', {
-        timeLeft: 0,
-      });
-
-      this.finishQuestion(
-        roomCode,
-      );
-    }
-  }
-
-  createTimer(
-    roomCode: string,
-  ) {
-    const room = rooms[roomCode];
-
-    if (!room) return;
-
-    room.timer = setInterval(() => {
-      if (room.paused)
-        return;
-
-      room.timeLeft--;
-
-      this.server.to(
-        roomCode,
-      ).emit('timerUpdate', {
-        timeLeft:
-          room.timeLeft,
-      });
-
-      if (
-        room.timeLeft <= 0
-      ) {
-        this.finishQuestion(
-          roomCode,
-        );
-      }
-    }, 1000);
-  }
 
   startQuestion(
     roomCode: string,
@@ -214,8 +35,6 @@ export class GameGateway {
 
     room.paused = false;
 
-    room.roundCount++;
-
     room.isSpeedRound =
       room.forceSpeedRound ||
       Math.random() < 0.25;
@@ -226,8 +45,7 @@ export class GameGateway {
 
     room.isLastChanceRound =
       room.forceLastChanceRound ||
-      room.roundCount % 5 ===
-        0;
+      Math.random() < 0.15;
 
     room.forceSpeedRound =
       false;
@@ -266,21 +84,10 @@ export class GameGateway {
       },
     );
 
-    this.setPhase(
-      roomCode,
-      'ROUND_INTRO',
-    );
-
     this.server.to(roomCode).emit(
-      'roundIntro',
+      'questionStarted',
       {
-        category:
-          randomQuestion.category,
-
-        style:
-          categoryStyles[
-            randomQuestion.category
-          ],
+        ...room.currentQuestion,
 
         isSpeedRound:
           room.isSpeedRound,
@@ -293,47 +100,141 @@ export class GameGateway {
       },
     );
 
-    setTimeout(() => {
-      this.setPhase(
+    this.server.to(roomCode).emit(
+      'timerUpdate',
+      {
+        timeLeft:
+          room.timeLeft,
+      },
+    );
+
+    this.server.to(roomCode).emit(
+      'gameState',
+      {
+        paused: false,
+      },
+    );
+
+    room.timer = setInterval(() => {
+      if (room.paused)
+        return;
+
+      room.timeLeft--;
+
+      this.server.to(
         roomCode,
-        'QUESTION',
-      );
+      ).emit('timerUpdate', {
+        timeLeft:
+          room.timeLeft,
+      });
 
-      this.server.to(roomCode).emit(
-        'questionStarted',
-        {
-          ...room.currentQuestion,
+      const allAnswered =
+        room.players.every(
+          (p: any) =>
+            p.hasAnswered,
+        );
 
-          isSpeedRound:
-            room.isSpeedRound,
+      if (
+        allAnswered &&
+        room.players.length > 0
+      ) {
+        room.timeLeft = 0;
+      }
 
-          isBlackoutRound:
-            room.isBlackoutRound,
+      if (
+        room.timeLeft <= 0
+      ) {
+        clearInterval(
+          room.timer,
+        );
 
-          isLastChanceRound:
-            room.isLastChanceRound,
-        },
-      );
+        room.questionActive = false;
 
-      this.server.to(roomCode).emit(
-        'timerUpdate',
-        {
-          timeLeft:
-            room.timeLeft,
-        },
-      );
+        room.players.forEach(
+          (player: any) => {
+            const isCorrect =
+              player.selectedAnswer ===
+              room.currentQuestion
+                .correct;
 
-      this.server.to(roomCode).emit(
-        'gameState',
-        {
-          paused: false,
-        },
-      );
+            player.lastResult =
+              isCorrect;
 
-      this.createTimer(
-        roomCode,
-      );
-    }, 2500);
+            if (
+              room.isLastChanceRound
+            ) {
+              if (
+                isCorrect
+              ) {
+                if (
+                  player.lives <=
+                  0
+                ) {
+                  player.lives = 1;
+                } else if (
+                  player.lives >=
+                  3
+                ) {
+                  player.score += 100;
+                } else {
+                  player.lives += 1;
+
+                  if (
+                    player.lives >
+                    3
+                  ) {
+                    player.lives = 3;
+                  }
+                }
+              }
+
+              return;
+            }
+
+            if (
+              isCorrect
+            ) {
+              player.score +=
+                room.isSpeedRound
+                  ? 200
+                  : 100;
+            } else {
+              player.lives -= 1;
+
+              if (
+                player.lives < 0
+              ) {
+                player.lives = 0;
+              }
+            }
+          },
+        );
+
+        this.server.to(
+          roomCode,
+        ).emit(
+          'questionEnded',
+          {
+            correct:
+              room
+                .currentQuestion
+                .correct,
+          },
+        );
+
+        setTimeout(() => {
+          this.server.to(
+            roomCode,
+          ).emit(
+            'playersUpdated',
+            {
+              players:
+                room.players,
+            },
+          );
+        }, 3000);
+      }
+    }, 1000);
   }
 
   @SubscribeMessage(
@@ -348,11 +249,6 @@ export class GameGateway {
     const { roomCode } =
       data;
 
-    console.log(
-      'CREATE ROOM:',
-      roomCode,
-    );
-
     rooms[roomCode] = {
       players: [],
 
@@ -366,15 +262,11 @@ export class GameGateway {
 
       currentQuestion: null,
 
-      phase: 'LOBBY',
-
       isSpeedRound: false,
 
       isBlackoutRound: false,
 
       isLastChanceRound: false,
-
-      roundCount: 0,
 
       forceSpeedRound: false,
 
@@ -382,13 +274,6 @@ export class GameGateway {
 
       forceLastChanceRound: false,
     };
-
-    console.log(
-      'ROOMS AFTER CREATE:',
-      Object.keys(
-        rooms,
-      ),
-    );
 
     client.join(roomCode);
 
@@ -414,26 +299,10 @@ export class GameGateway {
       playerName,
     } = data;
 
-    console.log(
-      'JOIN ROOM:',
-      roomCode,
-    );
-
-    console.log(
-      'AVAILABLE ROOMS:',
-      Object.keys(
-        rooms,
-      ),
-    );
-
     const room =
       rooms[roomCode];
 
     if (!room) {
-      console.log(
-        'ROOM NOT FOUND',
-      );
-
       client.emit(
         'roomError',
         {
@@ -462,11 +331,6 @@ export class GameGateway {
 
       lastResult: null,
     });
-
-    console.log(
-      'PLAYER JOINED:',
-      playerName,
-    );
 
     this.server.to(roomCode).emit(
       'playersUpdated',
@@ -498,11 +362,6 @@ export class GameGateway {
     @MessageBody()
     data: any,
   ) {
-    const room =
-      rooms[data.roomCode];
-
-    if (!room) return;
-
     this.startQuestion(
       data.roomCode,
     );
@@ -515,11 +374,6 @@ export class GameGateway {
     @MessageBody()
     data: any,
   ) {
-    const room =
-      rooms[data.roomCode];
-
-    if (!room) return;
-
     this.startQuestion(
       data.roomCode,
     );
@@ -659,10 +513,6 @@ export class GameGateway {
 
     client.emit(
       'answerLocked',
-    );
-
-    this.checkAllAnswered(
-      data.roomCode,
     );
   }
 }

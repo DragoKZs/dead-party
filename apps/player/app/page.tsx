@@ -17,9 +17,10 @@ const socket = io(
   'https://dead-party-server.onrender.com',
   {
     reconnection: true,
-    reconnectionAttempts: Infinity,
+    reconnectionAttempts:
+      Infinity,
     reconnectionDelay: 1000,
-  }
+  },
 );
 
 export default function Home() {
@@ -66,6 +67,21 @@ export default function Home() {
     setLockedAnswer,
   ] = useState(false);
 
+  const [
+    isSpeedRound,
+    setIsSpeedRound,
+  ] = useState(false);
+
+  const [
+    isBlackoutRound,
+    setIsBlackoutRound,
+  ] = useState(false);
+
+  const [
+    isLastChanceRound,
+    setIsLastChanceRound,
+  ] = useState(false);
+
   useEffect(() => {
     socket.on(
       'connect',
@@ -83,7 +99,10 @@ export default function Home() {
 
     return () => {
       socket.off('connect');
-      socket.off('disconnect');
+
+      socket.off(
+        'disconnect',
+      );
     };
   }, []);
 
@@ -154,6 +173,18 @@ export default function Home() {
         setCorrectAnswer(null);
 
         setLockedAnswer(false);
+
+        setIsSpeedRound(
+          data.isSpeedRound,
+        );
+
+        setIsBlackoutRound(
+          data.isBlackoutRound,
+        );
+
+        setIsLastChanceRound(
+          data.isLastChanceRound,
+        );
       },
     );
 
@@ -213,40 +244,17 @@ export default function Home() {
         'questionEnded',
       );
 
-      socket.off(
-        'gameState',
-      );
+      socket.off('gameState');
 
       socket.off(
         'answerLocked',
       );
 
-      socket.off(
-        'roomError',
-      );
+      socket.off('roomError');
     };
   }, []);
 
   const joinRoom = () => {
-    console.log(
-      'JOIN CLICKED',
-    );
-
-    console.log(
-      'CONNECTED:',
-      connected,
-    );
-
-    console.log(
-      'ROOM:',
-      roomCode,
-    );
-
-    console.log(
-      'NAME:',
-      playerName,
-    );
-
     if (
       !playerName.trim() ||
       !roomCode.trim()
@@ -337,7 +345,16 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-black p-4 text-white">
+    <main
+      className={`flex min-h-screen flex-col p-4 text-white
+      ${
+        isLastChanceRound
+          ? 'bg-red-950'
+          : isSpeedRound
+          ? 'bg-red-950'
+          : 'bg-black'
+      }`}
+    >
       <div className="mb-6 flex items-center justify-between">
         <div className="text-2xl font-black">
           {playerName}
@@ -384,6 +401,13 @@ export default function Home() {
                       index
                       ? 'bg-green-600'
                       : 'bg-red-600'
+                  }
+
+                  ${
+                    isBlackoutRound &&
+                    timeLeft <= 7
+                      ? 'opacity-10 blur-sm'
+                      : ''
                   }`}
                 >
                   {answer}
