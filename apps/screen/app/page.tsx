@@ -2,7 +2,7 @@
 
 import {
   useEffect,
-  useRef,
+  useMemo,
   useState,
 } from 'react';
 
@@ -10,23 +10,31 @@ import { io } from 'socket.io-client';
 
 const socket = io(
   'https://dead-party-server.onrender.com',
+  {
+    reconnection: true,
+  },
 );
 
 export default function ScreenPage() {
   const [roomCode, setRoomCode] =
-    useState('123');
+    useState('');
 
   const [joined, setJoined] =
     useState(false);
 
-  const [players, setPlayers] =
-    useState<any[]>([]);
-
   const [question, setQuestion] =
     useState<any>(null);
 
+  const [players, setPlayers] =
+    useState<any[]>([]);
+
   const [timeLeft, setTimeLeft] =
     useState(0);
+
+  const [
+    questionEnded,
+    setQuestionEnded,
+  ] = useState(false);
 
   const [
     correctAnswer,
@@ -34,15 +42,6 @@ export default function ScreenPage() {
   ] = useState<number | null>(
     null,
   );
-
-  const [paused, setPaused] =
-    useState(false);
-
-  const [phase, setPhase] =
-    useState('LOBBY');
-
-  const [category, setCategory] =
-    useState('');
 
   const [
     isSpeedRound,
@@ -59,45 +58,53 @@ export default function ScreenPage() {
     setIsLastChanceRound,
   ] = useState(false);
 
-  const tickSound = useRef<any>(
-    null,
-  );
+  const [
+    isFinalRound,
+    setIsFinalRound,
+  ] = useState(false);
 
-  const revealSound =
-    useRef<any>(null);
+  const [
+    killFeed,
+    setKillFeed,
+  ] = useState<any[]>([]);
 
-  const leaderboardSound =
-    useRef<any>(null);
+  const [
+    gameFinished,
+    setGameFinished,
+  ] = useState(false);
 
-  const panicSound =
-    useRef<any>(null);
-
-  useEffect(() => {
-    tickSound.current = new Audio(
-      '/sounds/tick.mp3',
-    );
-
-    revealSound.current =
-      new Audio(
-        '/sounds/reveal.mp3',
-      );
-
-    leaderboardSound.current =
-      new Audio(
-        '/sounds/leaderboard.mp3',
-      );
-
-    panicSound.current =
-      new Audio(
-        '/sounds/panic.mp3',
-      );
-  }, []);
+  const [
+    winner,
+    setWinner,
+  ] = useState<any>(null);
 
   useEffect(() => {
     socket.on(
       'playersUpdated',
       (data) => {
-        setPlayers(data.players);
+        const sorted =
+          [...data.players].sort(
+            (a, b) => {
+              if (
+                a.lives > 0 &&
+                b.lives <= 0
+              )
+                return -1;
+
+              if (
+                a.lives <= 0 &&
+                b.lives > 0
+              )
+                return 1;
+
+              return (
+                b.score -
+                a.score
+              );
+            },
+          );
+
+        setPlayers(sorted);
       },
     );
 
@@ -106,7 +113,11 @@ export default function ScreenPage() {
       (data) => {
         setQuestion(data);
 
+        setQuestionEnded(false);
+
         setCorrectAnswer(null);
+
+        setGameFinished(false);
 
         setIsSpeedRound(
           data.isSpeedRound,
@@ -118,6 +129,10 @@ export default function ScreenPage() {
 
         setIsLastChanceRound(
           data.isLastChanceRound,
+        );
+
+        setIsFinalRound(
+          data.isFinalRound,
         );
       },
     );
@@ -134,6 +149,8 @@ export default function ScreenPage() {
     socket.on(
       'questionEnded',
       (data) => {
+        setQuestionEnded(true);
+
         setCorrectAnswer(
           data.correct,
         );
@@ -141,36 +158,27 @@ export default function ScreenPage() {
     );
 
     socket.on(
-      'gameState',
-      (data) => {
-        setPaused(data.paused);
+      'killFeedUpdated',
+      (
+        events,
+      ) => {
+        setKillFeed(events);
       },
     );
 
     socket.on(
-      'phaseChanged',
+      'gameFinished',
       (data) => {
-        setPhase(data.phase);
-      },
-    );
-
-    socket.on(
-      'roundIntro',
-      (data) => {
-        setCategory(
-          data.category,
+        setGameFinished(
+          true,
         );
 
-        setIsSpeedRound(
-          data.isSpeedRound,
+        setWinner(
+          data.winner,
         );
 
-        setIsBlackoutRound(
-          data.isBlackoutRound,
-        );
-
-        setIsLastChanceRound(
-          data.isLastChanceRound,
+        setPlayers(
+          data.players,
         );
       },
     );
@@ -192,95 +200,119 @@ export default function ScreenPage() {
         'questionEnded',
       );
 
-      socket.off('gameState');
-
       socket.off(
-        'phaseChanged',
+        'killFeedUpdated',
       );
 
       socket.off(
-        'roundIntro',
+        'gameFinished',
       );
     };
   }, []);
 
-  useEffect(() => {
-    const stopAllSounds = () => {
-      [
-        tickSound.current,
-        revealSound.current,
-        leaderboardSound.current,
-        panicSound.current,
-      ].forEach((sound) => {
-        if (!sound) return;
+  const topThree =
+    useMemo(() => {
+      return [
+        ...players,
+      ]
+        .sort(
+          (
+            a,
+            b,
+          ) =>
+            b.score -
+            a.score,
+        )
+        .slice(0, 3);
+    }, [players]);
 
-        sound.pause();
+  const achievements =
+    useMemo(() => {
+      if (
+        !players.length
+      )
+        return [];
 
-        sound.currentTime = 0;
-      });
+      const fastest =
+        [...players].sort(
+          (
+            a,
+            b,
+          ) =>
+            b.bestStreak -
+            a.bestStreak,
+        )[0];
+
+      const smartest =
+        [...players].sort(
+          (
+            a,
+            b,
+          ) =>
+            b.correctAnswers -
+            a.correctAnswers,
+        )[0];
+
+      const survivor =
+        [...players].sort(
+          (
+            a,
+            b,
+          ) =>
+            b.lives -
+            a.lives,
+        )[0];
+
+      return [
+        {
+          title:
+            '🔥 ЛУЧШАЯ СЕРИЯ',
+          player:
+            fastest,
+          value:
+            fastest?.bestStreak ||
+            0,
+        },
+
+        {
+          title:
+            '🧠 БОЛЬШЕ ВСЕГО ПРАВИЛЬНЫХ',
+          player:
+            smartest,
+          value:
+            smartest?.correctAnswers ||
+            0,
+        },
+
+        {
+          title:
+            '☠ ВЫЖИВШИЙ',
+          player:
+            survivor,
+          value:
+            survivor?.lives ||
+            0,
+        },
+      ];
+    }, [players]);
+
+  const joinScreen =
+    () => {
+      socket.emit(
+        'joinScreen',
+        {
+          roomCode,
+        },
+      );
+
+      setJoined(true);
     };
-
-    stopAllSounds();
-
-    if (phase === 'QUESTION') {
-      tickSound.current.loop = true;
-
-      tickSound.current.volume = 0.3;
-
-      tickSound.current.play();
-    }
-
-    if (phase === 'REVEAL') {
-      revealSound.current.volume = 1;
-
-      revealSound.current.play();
-    }
-
-    if (
-      phase ===
-      'LEADERBOARD'
-    ) {
-      leaderboardSound.current.volume =
-        0.5;
-
-      leaderboardSound.current.play();
-    }
-
-    return () => {
-      stopAllSounds();
-    };
-  }, [phase]);
-
-  useEffect(() => {
-    if (
-      timeLeft <= 3 &&
-      timeLeft > 0 &&
-      phase === 'QUESTION'
-    ) {
-      panicSound.current.pause();
-
-      panicSound.current.currentTime =
-        0;
-
-      panicSound.current.volume = 1;
-
-      panicSound.current.play();
-    }
-  }, [timeLeft, phase]);
-
-  const joinScreen = () => {
-    socket.emit('joinScreen', {
-      roomCode,
-    });
-
-    setJoined(true);
-  };
 
   if (!joined) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white">
         <h1 className="mb-10 text-7xl font-black text-red-600">
-          DEAD PARTY SCREEN
+          SCREEN
         </h1>
 
         <div className="flex flex-col gap-4">
@@ -292,15 +324,160 @@ export default function ScreenPage() {
                 e.target.value,
               )
             }
+            placeholder="КОД КОМНАТЫ"
             className="rounded-2xl bg-gray-900 p-5 text-3xl outline-none"
           />
 
           <button
-            onClick={joinScreen}
+            onClick={
+              joinScreen
+            }
             className="rounded-2xl bg-red-600 p-5 text-3xl font-black"
           >
-            CONNECT SCREEN
+            ПОДКЛЮЧИТЬ
           </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (gameFinished) {
+    return (
+      <main className="min-h-screen overflow-hidden bg-black p-10 text-white">
+        <div className="mb-16 text-center">
+          <div className="mb-4 text-8xl font-black text-yellow-400">
+            👑
+          </div>
+
+          <div className="mb-2 text-7xl font-black">
+            ПОБЕДИТЕЛЬ
+          </div>
+
+          <div className="text-6xl font-black text-red-500">
+            {
+              winner?.name
+            }
+          </div>
+        </div>
+
+        <div className="mb-20">
+          <div className="mb-10 text-center text-6xl font-black">
+            🏆 ТОП 3
+          </div>
+
+          <div className="grid grid-cols-3 gap-8">
+            {topThree.map(
+              (
+                player,
+                index,
+              ) => (
+                <div
+                  key={
+                    player.id
+                  }
+                  className={`rounded-3xl border-4 p-8 text-center shadow-[0_0_40px_rgba(255,255,255,0.2)]
+                  ${
+                    index ===
+                    0
+                      ? 'border-yellow-400 bg-yellow-500/10'
+                      : index ===
+                        1
+                      ? 'border-gray-300 bg-gray-300/10'
+                      : 'border-orange-700 bg-orange-700/10'
+                  }`}
+                >
+                  <div className="mb-4 text-7xl">
+                    {player.avatar?.startsWith(
+                      'http',
+                    ) ? (
+                      <img
+                        src={
+                          player.avatar
+                        }
+                        alt="avatar"
+                        className="mx-auto h-28 w-28 rounded-full object-cover"
+                      />
+                    ) : (
+                      player.avatar
+                    )}
+                  </div>
+
+                  <div className="mb-3 text-4xl font-black">
+                    {
+                      player.name
+                    }
+                  </div>
+
+                  <div className="text-3xl font-black text-yellow-400">
+                    🏆{' '}
+                    {
+                      player.score
+                    }
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-10 text-center text-6xl font-black">
+            ⚡ ДОСТИЖЕНИЯ
+          </div>
+
+          <div className="grid grid-cols-3 gap-8">
+            {achievements.map(
+              (
+                achievement,
+                index,
+              ) => (
+                <div
+                  key={index}
+                  className="rounded-3xl border-2 border-red-500 bg-red-500/10 p-8 text-center"
+                >
+                  <div className="mb-4 text-3xl font-black">
+                    {
+                      achievement.title
+                    }
+                  </div>
+
+                  <div className="mb-4 text-5xl">
+                    {achievement.player?.avatar?.startsWith(
+                      'http',
+                    ) ? (
+                      <img
+                        src={
+                          achievement
+                            .player
+                            .avatar
+                        }
+                        alt="avatar"
+                        className="mx-auto h-24 w-24 rounded-full object-cover"
+                      />
+                    ) : (
+                      achievement
+                        .player
+                        ?.avatar
+                    )}
+                  </div>
+
+                  <div className="mb-2 text-4xl font-black">
+                    {
+                      achievement
+                        .player
+                        ?.name
+                    }
+                  </div>
+
+                  <div className="text-3xl font-black text-yellow-400">
+                    {
+                      achievement.value
+                    }
+                  </div>
+                </div>
+              ),
+            )}
+          </div>
         </div>
       </main>
     );
@@ -308,366 +485,207 @@ export default function ScreenPage() {
 
   return (
     <main
-      className={`min-h-screen overflow-hidden p-10 text-white transition-all duration-500
+      className={`relative min-h-screen overflow-hidden p-10 text-white transition-all
       ${
-        isLastChanceRound
+        isFinalRound
+          ? 'bg-gradient-to-b from-red-950 via-black to-black'
+          : isLastChanceRound
           ? 'bg-red-950'
-          : isSpeedRound &&
-            phase ===
-              'QUESTION'
+          : isSpeedRound
           ? 'bg-red-950'
           : 'bg-black'
       }`}
     >
-      {paused && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/90">
-          <div className="rounded-3xl bg-yellow-400 px-20 py-10 text-7xl font-black text-black">
-            GAME PAUSED
-          </div>
-        </div>
-      )}
-
-      {phase === 'LOBBY' && (
-        <div className="flex h-screen flex-col items-center justify-center">
-          <div className="mb-8 text-8xl font-black text-red-600">
-            DEAD PARTY
-          </div>
-
-          <div className="mb-10 text-[140px] font-black">
-            {roomCode}
-          </div>
-
-          <div className="text-4xl text-gray-500">
-            Waiting for players...
-          </div>
-        </div>
-      )}
-
-      {phase ===
-        'ROUND_INTRO' && (
-        <div
-          className={`flex h-screen flex-col items-center justify-center text-center transition-all
-          ${
-            isLastChanceRound
-              ? 'bg-red-950'
-              : isSpeedRound
-              ? 'bg-red-950'
-              : ''
-          }`}
-        >
-          {isLastChanceRound && (
-            <>
-              <div className="mb-8 animate-pulse text-7xl font-black text-red-500">
-                ☠ LAST CHANCE ☠
-              </div>
-
-              <div className="mb-6 text-4xl font-black text-white">
-                EVERYONE GETS ONE MORE SHOT
-              </div>
-
-              <div className="mb-16 text-2xl text-gray-300">
-                ❤️ Recover lives
-                <br />
-                🏆 Or earn bonus
-                points
-              </div>
-            </>
-          )}
-
-          {!isLastChanceRound &&
-            isSpeedRound && (
-              <div className="mb-8 animate-pulse text-5xl font-black text-yellow-400">
-                ⚡ SPEED ROUND ⚡
-              </div>
-            )}
-
-          {!isLastChanceRound &&
-            isBlackoutRound && (
-              <div className="mb-6 animate-pulse text-5xl font-black text-white">
-                🌑 BLACKOUT ROUND 🌑
-              </div>
-            )}
-
-          <div className="mb-8 text-4xl font-black text-red-500">
-            CATEGORY
-          </div>
-
-          <div className="animate-pulse text-[120px] font-black uppercase">
-            {category}
-          </div>
-        </div>
-      )}
-
-      {phase === 'QUESTION' &&
-        question && (
-          <div>
-            <div className="mb-10 flex items-center justify-between">
-              <h1 className="text-7xl font-black text-red-600">
-                DEAD PARTY
-              </h1>
-
-              <div
-                className={`text-6xl font-black transition-all
-                ${
-                  timeLeft <= 3
-                    ? isSpeedRound
-                      ? 'animate-bounce scale-125 text-red-500'
-                      : 'animate-pulse text-red-500'
-                    : 'text-yellow-400'
-                }`}
-              >
-                ⏳ {timeLeft}
-              </div>
-            </div>
-
+      <div className="absolute right-5 top-5 z-50 flex w-[420px] flex-col gap-3">
+        {killFeed.map(
+          (
+            event,
+          ) => (
             <div
-              className={`rounded-3xl p-10 transition-all
-              ${
-                isSpeedRound
-                  ? 'border-4 border-red-500 bg-red-900/40'
-                  : 'bg-gray-900'
-              }`}
+              key={
+                event.id
+              }
+              className="animate-pulse rounded-2xl border border-red-600 bg-black/80 p-4 text-xl font-black shadow-[0_0_20px_rgba(255,0,0,0.4)] backdrop-blur"
             >
-              {isSpeedRound && (
-                <div className="mb-6 text-3xl font-black text-yellow-400">
-                  ⚡ SPEED ROUND •
-                  DOUBLE POINTS
-                </div>
-              )}
-
-              {isBlackoutRound && (
-                <div className="mb-6 text-3xl font-black text-white">
-                  🌑 ANSWERS WILL
-                  DISAPPEAR
-                </div>
-              )}
-
-              {isLastChanceRound && (
-                <div className="mb-6 rounded-2xl bg-red-950 p-5 text-3xl font-black text-white">
-                  ☠ LAST CHANCE
-                  ROUND
-                  <div className="mt-2 text-xl text-gray-300">
-                    ❤️ Players
-                    recover lives
-                    <br />
-                    🏆 Full health
-                    players gain
-                    points
-                  </div>
-                </div>
-              )}
-
-              <h2 className="mb-10 text-6xl font-bold leading-tight">
-                {
-                  question.text
-                }
-              </h2>
-
-              <div className="grid grid-cols-2 gap-6">
-                {question.answers.map(
-                  (
-                    answer: string,
-                    index: number,
-                  ) => (
-                    <div
-                      key={index}
-                      className={`rounded-2xl p-8 text-4xl font-bold transition-all duration-700
-                      ${
-                        isSpeedRound
-                          ? 'bg-red-600'
-                          : 'bg-red-700'
-                      }
-
-                      ${
-                        isBlackoutRound &&
-                        timeLeft <= 7
-                          ? 'opacity-10 blur-sm'
-                          : ''
-                      }`}
-                    >
-                      {answer}
-                    </div>
-                  ),
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-      {phase === 'REVEAL' &&
-        question &&
-        correctAnswer !==
-          null && (
-          <div className="flex h-screen flex-col items-center justify-center text-center">
-            <div className="mb-10 animate-pulse text-5xl font-black text-green-400">
-              CORRECT ANSWER
-            </div>
-
-            <div className="scale-110 rounded-3xl bg-green-600 px-20 py-12 text-8xl font-black shadow-2xl">
               {
-                question.answers[
-                  correctAnswer
-                ]
+                event.text
               }
             </div>
-
-            {isSpeedRound && (
-              <div className="mt-10 text-4xl font-black text-yellow-400">
-                ⚡ SPEED ROUND
-                BONUS ⚡
-              </div>
-            )}
-
-            {isBlackoutRound && (
-              <div className="mt-10 text-4xl font-black text-white">
-                🌑 BLACKOUT
-                SURVIVED
-              </div>
-            )}
-
-            {isLastChanceRound && (
-              <div className="mt-10 text-4xl font-black text-red-400">
-                ☠ LAST CHANCE
-                COMPLETE ☠
-              </div>
-            )}
-          </div>
+          ),
         )}
+      </div>
 
-      {phase ===
-        'LEADERBOARD' && (
+      <div className="mb-8 flex items-center justify-between">
+        <div className="text-5xl font-black text-red-600">
+          {
+            roomCode
+          }
+        </div>
+
+        <div
+          className={`text-7xl font-black
+          ${
+            timeLeft <=
+            (isFinalRound
+              ? 5
+              : 3)
+              ? 'animate-pulse text-red-500'
+              : 'text-yellow-400'
+          }`}
+        >
+          {timeLeft}
+        </div>
+      </div>
+
+      {isSpeedRound && (
+        <div className="mb-6 rounded-3xl bg-yellow-400 p-6 text-center text-5xl font-black text-black">
+          ⚡ БЛИЦ
+        </div>
+      )}
+
+      {isBlackoutRound && (
+        <div className="mb-6 rounded-3xl bg-white p-6 text-center text-5xl font-black text-black">
+          🌑 ТЕМНОТА
+        </div>
+      )}
+
+      {isLastChanceRound && (
+        <div className="mb-6 rounded-3xl bg-red-700 p-6 text-center text-5xl font-black">
+          ☠ ПОСЛЕДНИЙ
+          ШАНС
+        </div>
+      )}
+
+      {isFinalRound && (
+        <div className="mb-6 animate-pulse rounded-3xl border-4 border-red-500 bg-black p-8 text-center text-7xl font-black text-red-500 shadow-[0_0_60px_rgba(255,0,0,0.8)]">
+          🔥 ФИНАЛ 🔥
+        </div>
+      )}
+
+      {question && (
         <div>
-          <div className="mb-10 animate-pulse text-center text-7xl font-black text-yellow-400">
-            LEADERBOARD
+          <div className="mb-10 rounded-3xl bg-gray-900 p-10 text-center text-5xl font-black shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+            {
+              question.text
+            }
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            {players
-              .sort((a, b) => {
-                if (
-                  a.lives <= 0 &&
-                  b.lives > 0
-                )
-                  return 1;
+            {question.answers.map(
+              (
+                answer: string,
+                index: number,
+              ) => (
+                <div
+                  key={index}
+                  className={`rounded-3xl p-10 text-center text-4xl font-black transition-all duration-700
+                  ${
+                    questionEnded &&
+                    correctAnswer ===
+                      index
+                      ? 'scale-105 bg-green-600 shadow-[0_0_40px_rgba(0,255,0,0.8)]'
+                      : 'bg-red-600'
+                  }
 
-                if (
-                  a.lives > 0 &&
-                  b.lives <= 0
-                )
-                  return -1;
-
-                return (
-                  b.score -
-                  a.score
-                );
-              })
-              .slice(0, 10)
-              .map(
-                (
-                  player,
-                  index,
-                ) => (
-                  <div
-                    key={player.id}
-                    className={`relative flex items-center justify-between rounded-3xl p-8 transition-all duration-700 animate-[fadeIn_.5s_ease]
-
-                    ${
-                      player.lives <=
-                      0
-                        ? 'scale-95 bg-gray-900 opacity-40'
-                        : 'bg-gray-900'
-                    }
-
-                    ${
-                      index === 0
-                        ? 'scale-105 border-4 border-yellow-400 shadow-[0_0_40px_rgba(250,204,21,0.8)]'
-                        : ''
-                    }
-
-                    ${
-                      player.lastResult &&
-                      isLastChanceRound
-                        ? 'animate-pulse ring-4 ring-green-400'
-                        : ''
-                    }
-                    `}
-                  >
-                    {index === 0 && (
-                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 rounded-full bg-yellow-400 px-6 py-2 text-xl font-black text-black">
-                        👑 LEADER
-                      </div>
-                    )}
-
-                    <div>
-                      <div className="mb-3 flex items-center gap-4">
-                        <div
-                          className={`text-5xl font-black
-                          ${
-                            index === 0
-                              ? 'text-yellow-400'
-                              : 'text-red-500'
-                          }`}
-                        >
-                          #
-                          {index +
-                            1}
-                        </div>
-
-                        <div className="text-4xl font-black">
-                          {
-                            player.name
-                          }
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <div className="text-3xl">
-                          {'❤️'.repeat(
-                            Math.max(
-                              0,
-                              player.lives,
-                            ),
-                          )}
-                        </div>
-
-                        {player.lives <=
-                          0 && (
-                          <div className="rounded-full bg-red-950 px-4 py-1 text-lg font-black text-red-400">
-                            ELIMINATED
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-end">
-                      <div
-                        className={`text-6xl font-black transition-all
-                        ${
-                          player.lastResult
-                            ? 'scale-110 text-yellow-300'
-                            : 'text-yellow-400'
-                        }`}
-                      >
-                        {
-                          player.score
-                        }
-                      </div>
-
-                      {player.lastResult && (
-                        <div className="mt-2 animate-bounce text-2xl font-black text-green-400">
-                          +
-                          {isSpeedRound
-                            ? '200'
-                            : '100'}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ),
-              )}
+                  ${
+                    isBlackoutRound &&
+                    timeLeft <= 7
+                      ? 'opacity-0'
+                      : ''
+                  }`}
+                >
+                  {
+                    answer
+                  }
+                </div>
+              ),
+            )}
           </div>
         </div>
       )}
+
+      <div className="mt-10">
+        <h2 className="mb-6 text-5xl font-black">
+          🏆 ЛИДЕРЫ
+        </h2>
+
+        <div className="flex flex-col gap-4">
+          {players.map(
+            (
+              player,
+              index,
+            ) => (
+              <div
+                key={player.id}
+                className={`flex items-center justify-between rounded-3xl p-6 text-3xl font-black transition-all
+                ${
+                  player.lives <= 0
+                    ? 'bg-gray-900 opacity-30'
+                    : index ===
+                      0
+                    ? 'border-2 border-yellow-400 bg-yellow-500/10'
+                    : 'bg-gray-800'
+                }`}
+              >
+                <div className="flex items-center gap-5">
+                  <div className="text-4xl">
+                    {player.avatar?.startsWith(
+                      'http',
+                    ) ? (
+                      <img
+                        src={
+                          player.avatar
+                        }
+                        alt="avatar"
+                        className="h-16 w-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      player.avatar
+                    )}
+                  </div>
+
+                  <div>
+                    <div>
+                      #
+                      {index +
+                        1}{' '}
+                      {
+                        player.name
+                      }
+                    </div>
+
+                    {player.bestStreak >=
+                      3 && (
+                      <div className="mt-1 text-lg text-yellow-400">
+                        🔥 x
+                        {
+                          player.bestStreak
+                        }
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-8">
+                  <div>
+                    ❤️{' '}
+                    {
+                      player.lives
+                    }
+                  </div>
+
+                  <div>
+                    🏆{' '}
+                    {
+                      player.score
+                    }
+                  </div>
+                </div>
+              </div>
+            ),
+          )}
+        </div>
+      </div>
     </main>
   );
 }

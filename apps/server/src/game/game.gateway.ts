@@ -10,6 +10,19 @@ import { Server, Socket } from 'socket.io';
 
 import { questions } from '../questions/questions';
 
+const emojiAvatars = [
+  '😈',
+  '👻',
+  '🤖',
+  '💀',
+  '👽',
+  '🔥',
+  '🦊',
+  '🐸',
+  '🦁',
+  '🐼',
+];
+
 const rooms: any = {};
 
 @WebSocketGateway({
@@ -22,171 +35,73 @@ export class GameGateway {
   @WebSocketServer()
   server: Server;
 
-  setPhase(
+  private addKillFeed(
     roomCode: string,
-    phase: string,
+    text: string,
   ) {
     const room = rooms[roomCode];
 
-    room.phase = phase;
+    if (!room) return;
+
+    room.killFeed.unshift({
+      id: Date.now(),
+      text,
+    });
+
+    room.killFeed =
+      room.killFeed.slice(
+        0,
+        5,
+      );
 
     this.server.to(roomCode).emit(
-      'phaseChanged',
-      {
-        phase,
-      },
+      'killFeedUpdated',
+      room.killFeed,
     );
   }
 
-  finishQuestion(
+  private getAlivePlayers(
+    room: any,
+  ) {
+    return room.players.filter(
+      (p: any) =>
+        p.lives > 0,
+    );
+  }
+
+  private updateLeaderboard(
     roomCode: string,
   ) {
     const room = rooms[roomCode];
 
-    clearInterval(room.timer);
+    if (!room) return;
 
-    room.questionActive = false;
-
-    room.players.forEach(
-      (player: any) => {
-        const isCorrect =
-          player.selectedAnswer ===
-          room.currentQuestion
-            .correct;
-
-        player.lastResult =
-          isCorrect;
-
-        if (
-          room.isLastChanceRound
-        ) {
-          if (isCorrect) {
-            if (
-              player.lives <= 0
-            ) {
-              player.lives = 1;
-            } else if (
-              player.lives >= 3
-            ) {
-              player.score += 100;
-            } else {
-              player.lives += 1;
-
-              if (
-                player.lives > 3
-              ) {
-                player.lives = 3;
-              }
-            }
-          }
-
-          return;
-        }
-
-        if (isCorrect) {
-          player.score +=
-            room.isSpeedRound
-              ? 200
-              : 100;
-        } else {
-          player.lives -= 1;
-
-          if (
-            player.lives < 0
-          ) {
-            player.lives = 0;
-          }
-        }
-      },
-    );
-
-    this.setPhase(
-      roomCode,
-      'REVEAL',
-    );
-
-    this.server.to(roomCode).emit(
-      'questionEnded',
-      {
-        correct:
-          room.currentQuestion
-            .correct,
-      },
-    );
-
-    setTimeout(() => {
-      this.setPhase(
-        roomCode,
-        'LEADERBOARD',
-      );
-
-      this.server.to(
-        roomCode,
-      ).emit(
-        'playersUpdated',
-        {
-          players:
-            room.players,
-        },
-      );
-    }, 3000);
-  }
-
-  checkAllAnswered(
-    roomCode: string,
-  ) {
-    const room = rooms[roomCode];
-
-    const allAnswered =
-      room.players.every(
-        (p: any) =>
-          p.hasAnswered,
-      );
-
-    if (
-      allAnswered &&
-      room.players.length > 0
-    ) {
-      room.timeLeft = 0;
-
-      this.server.to(
-        roomCode,
-      ).emit('timerUpdate', {
-        timeLeft: 0,
-      });
-
-      this.finishQuestion(
-        roomCode,
-      );
-    }
-  }
-
-  createTimer(
-    roomCode: string,
-  ) {
-    const room = rooms[roomCode];
-
-    room.timer = setInterval(() => {
-      if (room.paused)
-        return;
-
-      room.timeLeft--;
-
-      this.server.to(
-        roomCode,
-      ).emit('timerUpdate', {
-        timeLeft:
-          room.timeLeft,
-      });
+    const sorted = [
+      ...room.players,
+    ].sort((a, b) => {
+      if (
+        a.lives > 0 &&
+        b.lives <= 0
+      )
+        return -1;
 
       if (
-        room.timeLeft <= 0
-      ) {
-        this.finishQuestion(
-          roomCode,
-        );
-      }
-    }, 1000);
+        a.lives <= 0 &&
+        b.lives > 0
+      )
+        return 1;
+
+      return (
+        b.score - a.score
+      );
+    });
+
+    this.server.to(roomCode).emit(
+      'playersUpdated',
+      {
+        players: sorted,
+      },
+    );
   }
 
   startQuestion(
@@ -194,26 +109,39 @@ export class GameGateway {
   ) {
     const room = rooms[roomCode];
 
+    if (!room) return;
+
     clearInterval(room.timer);
 
     room.questionActive = true;
 
     room.paused = false;
 
-    room.roundCount++;
+    const alivePlayers =
+      this.getAlivePlayers(
+        room,
+      );
+
+    room.isFinalRound =
+      alivePlayers.length <= 3;
 
     room.isSpeedRound =
-      room.forceSpeedRound ||
-      Math.random() < 0.25;
+      !room.isFinalRound &&
+      (room.forceSpeedRound ||
+        Math.random() <
+          0.25);
 
     room.isBlackoutRound =
-      room.forceBlackoutRound ||
-      Math.random() < 0.2;
+      !room.isFinalRound &&
+      (room.forceBlackoutRound ||
+        Math.random() <
+          0.2);
 
     room.isLastChanceRound =
-      room.forceLastChanceRound ||
-      room.roundCount % 5 ===
-        0;
+      !room.isFinalRound &&
+      (room.forceLastChanceRound ||
+        Math.random() <
+          0.15);
 
     room.forceSpeedRound =
       false;
@@ -225,7 +153,9 @@ export class GameGateway {
       false;
 
     room.timeLeft =
-      room.isSpeedRound
+      room.isFinalRound
+        ? 5
+        : room.isSpeedRound
         ? 5
         : 10;
 
@@ -252,16 +182,10 @@ export class GameGateway {
       },
     );
 
-    this.setPhase(
-      roomCode,
-      'ROUND_INTRO',
-    );
-
     this.server.to(roomCode).emit(
-      'roundIntro',
+      'questionStarted',
       {
-        category:
-          randomQuestion.category,
+        ...room.currentQuestion,
 
         isSpeedRound:
           room.isSpeedRound,
@@ -271,50 +195,225 @@ export class GameGateway {
 
         isLastChanceRound:
           room.isLastChanceRound,
+
+        isFinalRound:
+          room.isFinalRound,
       },
     );
 
-    setTimeout(() => {
-      this.setPhase(
+    if (
+      room.isFinalRound
+    ) {
+      this.addKillFeed(
         roomCode,
-        'QUESTION',
+        '🔥 НАЧАЛСЯ ФИНАЛ',
       );
+    }
 
-      this.server.to(roomCode).emit(
-        'questionStarted',
-        {
-          ...room.currentQuestion,
+    this.server.to(roomCode).emit(
+      'timerUpdate',
+      {
+        timeLeft:
+          room.timeLeft,
+      },
+    );
 
-          isSpeedRound:
-            room.isSpeedRound,
+    this.server.to(roomCode).emit(
+      'gameState',
+      {
+        paused: false,
+      },
+    );
 
-          isBlackoutRound:
-            room.isBlackoutRound,
+    room.timer = setInterval(() => {
+      if (room.paused)
+        return;
 
-          isLastChanceRound:
-            room.isLastChanceRound,
-        },
-      );
+      room.timeLeft--;
 
-      this.server.to(roomCode).emit(
-        'timerUpdate',
-        {
-          timeLeft:
-            room.timeLeft,
-        },
-      );
-
-      this.server.to(roomCode).emit(
-        'gameState',
-        {
-          paused: false,
-        },
-      );
-
-      this.createTimer(
+      this.server.to(
         roomCode,
-      );
-    }, 2500);
+      ).emit('timerUpdate', {
+        timeLeft:
+          room.timeLeft,
+      });
+
+      const allAnswered =
+        room.players.every(
+          (p: any) =>
+            p.hasAnswered ||
+            p.lives <= 0,
+        );
+
+      if (
+        allAnswered &&
+        room.players.length > 0
+      ) {
+        room.timeLeft = 0;
+      }
+
+      if (
+        room.timeLeft <= 0
+      ) {
+        clearInterval(
+          room.timer,
+        );
+
+        room.questionActive = false;
+
+        room.players.forEach(
+          (player: any) => {
+            const isCorrect =
+              player.selectedAnswer ===
+              room.currentQuestion
+                .correct;
+
+            player.lastResult =
+              isCorrect;
+
+            if (
+              isCorrect
+            ) {
+              player.correctAnswers++;
+
+              player.streak++;
+
+              if (
+                player.streak >
+                player.bestStreak
+              ) {
+                player.bestStreak =
+                  player.streak;
+              }
+
+              if (
+                player.streak >=
+                3
+              ) {
+                this.server
+                  .to(player.socketId)
+                  .emit(
+                    'streak',
+                    {
+                      streak:
+                        player.streak,
+                    },
+                  );
+
+                this.addKillFeed(
+                  roomCode,
+                  `🔥 ${player.name} НА СЕРИИ x${player.streak}`,
+                );
+              }
+            } else {
+              player.streak = 0;
+            }
+
+            if (
+              room.isLastChanceRound
+            ) {
+              if (
+                isCorrect
+              ) {
+                if (
+                  player.lives <=
+                  0
+                ) {
+                  player.lives = 1;
+
+                  this.addKillFeed(
+                    roomCode,
+                    `💀 ${player.name} ВЕРНУЛСЯ В ИГРУ`,
+                  );
+                } else if (
+                  player.lives >=
+                  3
+                ) {
+                  player.score += 100;
+                } else {
+                  player.lives += 1;
+                }
+              }
+
+              return;
+            }
+
+            if (
+              isCorrect
+            ) {
+              player.score +=
+                room.isFinalRound
+                  ? 300
+                  : room.isSpeedRound
+                  ? 200
+                  : 100;
+            } else {
+              if (
+                player.lives > 0
+              ) {
+                player.lives--;
+
+                if (
+                  player.lives <=
+                  0
+                ) {
+                  this.addKillFeed(
+                    roomCode,
+                    `☠ ${player.name} ВЫБЫЛ`,
+                  );
+                }
+              }
+            }
+          },
+        );
+
+        this.server.to(
+          roomCode,
+        ).emit(
+          'questionEnded',
+          {
+            correct:
+              room
+                .currentQuestion
+                .correct,
+          },
+        );
+
+        this.updateLeaderboard(
+          roomCode,
+        );
+
+        const aliveAfter =
+          this.getAlivePlayers(
+            room,
+          );
+
+        if (
+          aliveAfter.length <=
+            1 &&
+          room.isFinalRound
+        ) {
+          const winner =
+            aliveAfter[0];
+
+          this.server.to(
+            roomCode,
+          ).emit(
+            'gameFinished',
+            {
+              winner,
+              players:
+                room.players,
+            },
+          );
+
+          this.addKillFeed(
+            roomCode,
+            `👑 ПОБЕДИТЕЛЬ — ${winner?.name || 'НЕТ ПОБЕДИТЕЛЯ'}`,
+          );
+        }
+      }
+    }, 1000);
   }
 
   @SubscribeMessage(
@@ -329,21 +428,7 @@ export class GameGateway {
     const { roomCode } =
       data;
 
-    if (rooms[roomCode]) {
-      client.emit(
-        'roomError',
-        {
-          message:
-            'Room already exists',
-        },
-      );
-
-      return;
-    }
-
     rooms[roomCode] = {
-      hostId: client.id,
-
       players: [],
 
       timer: null,
@@ -356,21 +441,21 @@ export class GameGateway {
 
       currentQuestion: null,
 
-      phase: 'LOBBY',
-
       isSpeedRound: false,
 
       isBlackoutRound: false,
 
       isLastChanceRound: false,
 
-      roundCount: 0,
+      isFinalRound: false,
 
       forceSpeedRound: false,
 
       forceBlackoutRound: false,
 
       forceLastChanceRound: false,
+
+      killFeed: [],
     };
 
     client.join(roomCode);
@@ -395,6 +480,8 @@ export class GameGateway {
     const {
       roomCode,
       playerName,
+      telegramId,
+      avatar,
     } = data;
 
     const room =
@@ -405,8 +492,43 @@ export class GameGateway {
         'roomError',
         {
           message:
-            'Room does not exist',
+            'Комната не существует',
         },
+      );
+
+      return;
+    }
+
+    const existingPlayer =
+      room.players.find(
+        (p: any) =>
+          p.telegramId ===
+          telegramId,
+      );
+
+    if (
+      existingPlayer
+    ) {
+      existingPlayer.socketId =
+        client.id;
+
+      existingPlayer.disconnected =
+        false;
+
+      client.join(roomCode);
+
+      client.emit(
+        'reconnected',
+        existingPlayer,
+      );
+
+      this.addKillFeed(
+        roomCode,
+        `🔄 ${existingPlayer.name} ВЕРНУЛСЯ`,
+      );
+
+      this.updateLeaderboard(
+        roomCode,
       );
 
       return;
@@ -414,28 +536,55 @@ export class GameGateway {
 
     client.join(roomCode);
 
+    const randomEmoji =
+      emojiAvatars[
+        Math.floor(
+          Math.random() *
+            emojiAvatars.length,
+        )
+      ];
+
     room.players.push({
       id: client.id,
 
+      socketId:
+        client.id,
+
+      telegramId,
+
       name: playerName,
+
+      avatar:
+        avatar ||
+        randomEmoji,
 
       score: 0,
 
       lives: 3,
 
+      streak: 0,
+
+      bestStreak: 0,
+
+      correctAnswers: 0,
+
+      disconnected: false,
+
       hasAnswered: false,
 
-      selectedAnswer: null,
+      selectedAnswer:
+        null,
 
       lastResult: null,
     });
 
-    this.server.to(roomCode).emit(
-      'playersUpdated',
-      {
-        players:
-          room.players,
-      },
+    this.addKillFeed(
+      roomCode,
+      `🎮 ${playerName} ПОДКЛЮЧИЛСЯ`,
+    );
+
+    this.updateLeaderboard(
+      roomCode,
     );
   }
 
@@ -459,20 +608,7 @@ export class GameGateway {
   handleStartGame(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
-    const room =
-      rooms[data.roomCode];
-
-    if (!room) return;
-
-    if (
-      room.hostId !==
-      client.id
-    )
-      return;
-
     this.startQuestion(
       data.roomCode,
     );
@@ -484,20 +620,7 @@ export class GameGateway {
   handleNextQuestion(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
-    const room =
-      rooms[data.roomCode];
-
-    if (!room) return;
-
-    if (
-      room.hostId !==
-      client.id
-    )
-      return;
-
     this.startQuestion(
       data.roomCode,
     );
@@ -509,19 +632,11 @@ export class GameGateway {
   handlePauseGame(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
 
     if (!room) return;
-
-    if (
-      room.hostId !==
-      client.id
-    )
-      return;
 
     room.paused = true;
 
@@ -538,19 +653,11 @@ export class GameGateway {
   handleResumeGame(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
 
     if (!room) return;
-
-    if (
-      room.hostId !==
-      client.id
-    )
-      return;
 
     room.paused = false;
 
@@ -567,8 +674,6 @@ export class GameGateway {
   handleForceSpeedRound(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
@@ -585,8 +690,6 @@ export class GameGateway {
   handleForceBlackoutRound(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
@@ -603,8 +706,6 @@ export class GameGateway {
   handleForceLastChanceRound(
     @MessageBody()
     data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
       rooms[data.roomCode];
@@ -640,7 +741,7 @@ export class GameGateway {
     const player =
       room.players.find(
         (p: any) =>
-          p.id ===
+          p.socketId ===
           client.id,
       );
 
@@ -660,9 +761,30 @@ export class GameGateway {
     client.emit(
       'answerLocked',
     );
+  }
 
-    this.checkAllAnswered(
-      data.roomCode,
-    );
+  handleDisconnect(
+    client: Socket,
+  ) {
+    Object.values(
+      rooms,
+    ).forEach((room: any) => {
+      const player =
+        room.players.find(
+          (p: any) =>
+            p.socketId ===
+            client.id,
+        );
+
+      if (player) {
+        player.disconnected =
+          true;
+
+        this.addKillFeed(
+          room.roomCode,
+          `📡 ${player.name} ОТКЛЮЧИЛСЯ`,
+        );
+      }
+    });
   }
 }

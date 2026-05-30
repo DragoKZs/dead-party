@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 
@@ -16,17 +17,25 @@ import {
 const socket = io(
   'https://dead-party-server.onrender.com',
   {
-    transports: [
-      'websocket',
-    ],
-
     reconnection: true,
-
-    reconnectionAttempts: 999999,
-
+    reconnectionAttempts:
+      Infinity,
     reconnectionDelay: 1000,
   },
 );
+
+const randomEmojis = [
+  '😈',
+  '👻',
+  '🤖',
+  '💀',
+  '👽',
+  '🔥',
+  '🦊',
+  '🐼',
+  '🦁',
+  '🐸',
+];
 
 export default function Home() {
   const [connected, setConnected] =
@@ -36,6 +45,9 @@ export default function Home() {
     telegramUser,
     setTelegramUser,
   ] = useState<any>(null);
+
+  const [telegramId, setTelegramId] =
+    useState('');
 
   const [playerName, setPlayerName] =
     useState('');
@@ -87,6 +99,42 @@ export default function Home() {
     setIsLastChanceRound,
   ] = useState(false);
 
+  const [
+    isFinalRound,
+    setIsFinalRound,
+  ] = useState(false);
+
+  const [streak, setStreak] =
+    useState(0);
+
+  const [
+    streakPopup,
+    setStreakPopup,
+  ] = useState(false);
+
+  const [
+    killFeed,
+    setKillFeed,
+  ] = useState<any[]>([]);
+
+  const [
+    reconnectAvailable,
+    setReconnectAvailable,
+  ] = useState(false);
+
+  const [avatar, setAvatar] =
+    useState('');
+
+  const randomEmoji =
+    useMemo(() => {
+      return randomEmojis[
+        Math.floor(
+          Math.random() *
+            randomEmojis.length,
+        )
+      ];
+    }, []);
+
   useEffect(() => {
     socket.on(
       'connect',
@@ -129,6 +177,10 @@ export default function Home() {
           user,
         );
 
+        setTelegramId(
+          String(user.id),
+        );
+
         const fullName = [
           user.first_name,
           user.last_name,
@@ -139,13 +191,33 @@ export default function Home() {
         setPlayerName(
           fullName,
         );
+
+        if (
+          user.photo_url
+        ) {
+          setAvatar(
+            user.photo_url,
+          );
+        } else {
+          setAvatar(
+            randomEmoji,
+          );
+        }
+      } else {
+        setAvatar(
+          randomEmoji,
+        );
       }
-    } catch (e) {
+    } catch {
       console.log(
-        'Telegram SDK unavailable',
+        'Telegram unavailable',
+      );
+
+      setAvatar(
+        randomEmoji,
       );
     }
-  }, []);
+  }, [randomEmoji]);
 
   useEffect(() => {
     if (
@@ -165,6 +237,38 @@ export default function Home() {
     if (room) {
       setRoomCode(room);
     }
+  }, []);
+
+  useEffect(() => {
+    const saved =
+      localStorage.getItem(
+        'dead-party-player',
+      );
+
+    if (!saved) return;
+
+    const parsed =
+      JSON.parse(saved);
+
+    setReconnectAvailable(
+      true,
+    );
+
+    setPlayerName(
+      parsed.playerName,
+    );
+
+    setRoomCode(
+      parsed.roomCode,
+    );
+
+    setTelegramId(
+      parsed.telegramId,
+    );
+
+    setAvatar(
+      parsed.avatar,
+    );
   }, []);
 
   useEffect(() => {
@@ -189,6 +293,10 @@ export default function Home() {
 
         setIsLastChanceRound(
           data.isLastChanceRound,
+        );
+
+        setIsFinalRound(
+          data.isFinalRound,
         );
       },
     );
@@ -236,6 +344,48 @@ export default function Home() {
       },
     );
 
+    socket.on(
+      'streak',
+      (data) => {
+        setStreak(
+          data.streak,
+        );
+
+        setStreakPopup(
+          true,
+        );
+
+        setTimeout(() => {
+          setStreakPopup(
+            false,
+          );
+        }, 2500);
+      },
+    );
+
+    socket.on(
+      'killFeedUpdated',
+      (
+        events,
+      ) => {
+        setKillFeed(events);
+      },
+    );
+
+    socket.on(
+      'reconnected',
+      () => {
+        setJoined(true);
+      },
+    );
+
+    socket.on(
+      'gameFinished',
+      () => {
+        setQuestion(null);
+      },
+    );
+
     return () => {
       socket.off(
         'questionStarted',
@@ -249,47 +399,86 @@ export default function Home() {
         'questionEnded',
       );
 
-      socket.off('gameState');
+      socket.off(
+        'gameState',
+      );
 
       socket.off(
         'answerLocked',
       );
 
-      socket.off('roomError');
+      socket.off(
+        'roomError',
+      );
+
+      socket.off(
+        'streak',
+      );
+
+      socket.off(
+        'killFeedUpdated',
+      );
+
+      socket.off(
+        'reconnected',
+      );
+
+      socket.off(
+        'gameFinished',
+      );
     };
   }, []);
 
-  const joinRoom = () => {
-    if (!connected) {
-      alert(
-        'Socket not connected yet',
+  const saveReconnectData =
+    () => {
+      localStorage.setItem(
+        'dead-party-player',
+        JSON.stringify({
+          playerName,
+          roomCode,
+          telegramId,
+          avatar,
+        }),
       );
+    };
 
-      return;
-    }
-
+  const joinRoom = () => {
     if (
       !playerName.trim() ||
       !roomCode.trim()
     )
       return;
 
-    socket.emit('joinRoom', {
-      roomCode,
-      playerName,
-    });
+    socket.emit(
+      'joinRoom',
+      {
+        roomCode,
+        playerName,
+        telegramId,
+        avatar,
+      },
+    );
+
+    saveReconnectData();
 
     setJoined(true);
   };
 
+  const reconnect =
+    () => {
+      joinRoom();
+    };
+
   const submitAnswer = (
     answerIndex: number,
   ) => {
-    if (questionEnded) return;
+    if (questionEnded)
+      return;
 
     if (paused) return;
 
-    if (lockedAnswer) return;
+    if (lockedAnswer)
+      return;
 
     socket.emit(
       'submitAnswer',
@@ -309,62 +498,85 @@ export default function Home() {
 
         <div className="mb-4 text-sm text-gray-500">
           {connected
-            ? '🟢 Connected'
-            : '🔴 Connecting...'}
+            ? '🟢 Подключено'
+            : '🔴 Подключение...'}
         </div>
 
-        {telegramUser && (
-          <div className="mb-4 rounded-2xl bg-blue-600 p-3 text-center font-bold">
-            Telegram:
-            {' '}
-            {telegramUser.username ||
-              telegramUser.first_name}
-          </div>
+        {reconnectAvailable && (
+          <button
+            onClick={
+              reconnect
+            }
+            className="mb-6 rounded-2xl bg-yellow-500 p-4 text-2xl font-black text-black"
+          >
+            🔄 ВЕРНУТЬСЯ
+            В ИГРУ
+          </button>
         )}
 
-        <div className="flex w-full max-w-sm flex-col gap-4">
-          <div>
-            <div className="mb-2 text-sm font-bold text-gray-400">
-              NICKNAME
-            </div>
-
-            <input
-              type="text"
-              placeholder="YOUR NAME"
-              value={playerName}
-              onChange={(e) =>
-                setPlayerName(
-                  e.target.value,
-                )
-              }
-              className="w-full rounded-2xl border border-gray-800 bg-gray-900 p-5 text-xl outline-none"
+        <div className="mb-6 flex flex-col items-center gap-4">
+          {avatar.startsWith(
+            'http',
+          ) ? (
+            <img
+              src={avatar}
+              alt="avatar"
+              className="h-28 w-28 rounded-full border-4 border-red-600 object-cover"
             />
-          </div>
-
-          <div>
-            <div className="mb-2 text-sm font-bold text-gray-400">
-              ROOM CODE
+          ) : (
+            <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-red-600 bg-gray-900 text-6xl">
+              {avatar}
             </div>
-
-            <input
-              type="text"
-              placeholder="ROOM CODE"
-              value={roomCode}
-              onChange={(e) =>
-                setRoomCode(
-                  e.target.value,
-                )
-              }
-              className="w-full rounded-2xl border border-gray-800 bg-gray-900 p-5 text-xl outline-none"
-            />
-          </div>
+          )}
 
           <button
-            disabled={!connected}
-            onClick={joinRoom}
-            className="mt-2 rounded-2xl bg-red-600 p-5 text-2xl font-black transition-all active:scale-95 disabled:opacity-50"
+            onClick={() =>
+              setAvatar(
+                randomEmojis[
+                  Math.floor(
+                    Math.random() *
+                      randomEmojis.length,
+                  )
+                ],
+              )
+            }
+            className="rounded-xl bg-gray-800 px-4 py-2 text-sm"
           >
-            JOIN ROOM
+            СЛУЧАЙНЫЙ
+            АВАТАР
+          </button>
+        </div>
+
+        <div className="flex w-full max-w-sm flex-col gap-4">
+          <input
+            type="text"
+            placeholder="ВАШЕ ИМЯ"
+            value={playerName}
+            onChange={(e) =>
+              setPlayerName(
+                e.target.value,
+              )
+            }
+            className="w-full rounded-2xl bg-gray-900 p-5 text-xl outline-none"
+          />
+
+          <input
+            type="text"
+            placeholder="КОД КОМНАТЫ"
+            value={roomCode}
+            onChange={(e) =>
+              setRoomCode(
+                e.target.value,
+              )
+            }
+            className="w-full rounded-2xl bg-gray-900 p-5 text-xl outline-none"
+          />
+
+          <button
+            onClick={joinRoom}
+            className="rounded-2xl bg-red-600 p-5 text-2xl font-black"
+          >
+            ВОЙТИ
           </button>
         </div>
       </main>
@@ -373,30 +585,73 @@ export default function Home() {
 
   return (
     <main
-      className={`flex min-h-screen flex-col p-4 text-white transition-all
+      className={`relative flex min-h-screen flex-col overflow-hidden p-4 text-white transition-all
       ${
-        isLastChanceRound
+        isFinalRound
+          ? 'bg-gradient-to-b from-red-950 via-black to-black'
+          : isLastChanceRound
           ? 'bg-red-950'
           : isSpeedRound
           ? 'bg-red-950'
           : 'bg-black'
       }`}
     >
+      <div className="absolute right-3 top-3 flex w-[320px] flex-col gap-2">
+        {killFeed.map(
+          (
+            event,
+          ) => (
+            <div
+              key={
+                event.id
+              }
+              className="animate-pulse rounded-xl border border-red-600 bg-black/80 p-3 text-sm font-bold backdrop-blur"
+            >
+              {
+                event.text
+              }
+            </div>
+          ),
+        )}
+      </div>
+
+      {streakPopup && (
+        <div className="absolute left-1/2 top-28 z-50 -translate-x-1/2 animate-bounce rounded-3xl border-4 border-yellow-400 bg-black p-6 text-center text-4xl font-black text-yellow-400 shadow-[0_0_40px_rgba(255,255,0,0.8)]">
+          🔥 СЕРИЯ x
+          {streak}
+        </div>
+      )}
+
       <div className="mb-6 flex items-center justify-between">
-        <div>
-          <div className="text-sm text-gray-400">
-            PLAYER
-          </div>
+        <div className="flex items-center gap-3">
+          {avatar.startsWith(
+            'http',
+          ) ? (
+            <img
+              src={avatar}
+              alt="avatar"
+              className="h-14 w-14 rounded-full border-2 border-red-500 object-cover"
+            />
+          ) : (
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-red-500 bg-gray-900 text-2xl">
+              {avatar}
+            </div>
+          )}
 
           <div className="text-2xl font-black">
-            {playerName}
+            {
+              playerName
+            }
           </div>
         </div>
 
         <div
           className={`text-5xl font-black
           ${
-            timeLeft <= 3
+            timeLeft <=
+            (isFinalRound
+              ? 5
+              : 3)
               ? 'animate-pulse text-red-500'
               : 'text-yellow-400'
           }`}
@@ -407,34 +662,41 @@ export default function Home() {
 
       {paused && (
         <div className="mb-4 rounded-2xl bg-yellow-500 p-4 text-center text-2xl font-black text-black">
-          GAME PAUSED
+          ИГРА НА ПАУЗЕ
+        </div>
+      )}
+
+      {isSpeedRound && (
+        <div className="mb-4 rounded-2xl bg-yellow-400 p-4 text-center text-2xl font-black text-black">
+          ⚡ БЛИЦ
+        </div>
+      )}
+
+      {isBlackoutRound && (
+        <div className="mb-4 rounded-2xl bg-white p-4 text-center text-2xl font-black text-black">
+          🌑 ТЕМНОТА
+        </div>
+      )}
+
+      {isLastChanceRound && (
+        <div className="mb-4 rounded-2xl bg-red-700 p-4 text-center text-2xl font-black">
+          ☠ ПОСЛЕДНИЙ
+          ШАНС
+        </div>
+      )}
+
+      {isFinalRound && (
+        <div className="mb-4 animate-pulse rounded-2xl border-4 border-red-500 bg-black p-6 text-center text-4xl font-black text-red-500 shadow-[0_0_40px_rgba(255,0,0,0.8)]">
+          🔥 ФИНАЛ 🔥
         </div>
       )}
 
       {question && (
         <div className="flex flex-1 flex-col gap-4">
-          {isSpeedRound && (
-            <div className="rounded-2xl bg-yellow-400 p-4 text-center text-2xl font-black text-black">
-              ⚡ SPEED ROUND ⚡
-            </div>
-          )}
-
-          {isBlackoutRound && (
-            <div className="rounded-2xl bg-white p-4 text-center text-2xl font-black text-black">
-              🌑 ANSWERS WILL
-              DISAPPEAR
-            </div>
-          )}
-
-          {isLastChanceRound && (
-            <div className="rounded-2xl bg-red-950 p-4 text-center text-2xl font-black text-white">
-              ☠ LAST CHANCE
-              ROUND
-            </div>
-          )}
-
           <div className="rounded-3xl bg-gray-900 p-6 text-center text-3xl font-black">
-            {question.text}
+            {
+              question.text
+            }
           </div>
 
           <div className="grid flex-1 grid-cols-1 gap-4">
@@ -454,7 +716,7 @@ export default function Home() {
                       index,
                     )
                   }
-                  className={`min-h-[90px] rounded-3xl p-6 text-2xl font-black transition-all duration-700 active:scale-95 disabled:opacity-50
+                  className={`min-h-[90px] rounded-3xl p-6 text-2xl font-black transition-all duration-700
                   ${
                     questionEnded &&
                     correctAnswer ===
@@ -470,7 +732,9 @@ export default function Home() {
                       : ''
                   }`}
                 >
-                  {answer}
+                  {
+                    answer
+                  }
                 </button>
               ),
             )}
@@ -479,13 +743,14 @@ export default function Home() {
           {lockedAnswer &&
             !questionEnded && (
               <div className="rounded-2xl bg-blue-600 p-5 text-center text-3xl font-black">
-                ANSWER LOCKED
+                ОТВЕТ ПРИНЯТ
               </div>
             )}
 
           {questionEnded && (
             <div className="rounded-2xl bg-gray-900 p-5 text-center text-3xl font-black">
-              TIME'S UP
+              ВРЕМЯ
+              ВЫШЛО
             </div>
           )}
         </div>
