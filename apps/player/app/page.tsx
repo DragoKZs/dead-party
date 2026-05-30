@@ -7,18 +7,35 @@ import {
 
 import { io } from 'socket.io-client';
 
+import {
+  init,
+  miniApp,
+  retrieveLaunchParams,
+} from '@tma.js/sdk';
+
 const socket = io(
   'https://dead-party-server.onrender.com',
   {
     transports: [
       'websocket',
     ],
+
+    reconnection: true,
+
+    reconnectionAttempts: 999999,
+
+    reconnectionDelay: 1000,
   },
 );
 
 export default function Home() {
   const [connected, setConnected] =
     useState(false);
+
+  const [
+    telegramUser,
+    setTelegramUser,
+  ] = useState<any>(null);
 
   const [playerName, setPlayerName] =
     useState('');
@@ -95,6 +112,44 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    try {
+      init();
+
+      miniApp.mount();
+
+      miniApp.requestFullscreen();
+
+      const lp =
+        retrieveLaunchParams();
+
+      const user =
+        lp.tgWebAppData
+          ?.user;
+
+      if (user) {
+        setTelegramUser(
+          user,
+        );
+
+        const fullName = [
+          user.first_name,
+          user.last_name,
+        ]
+          .filter(Boolean)
+          .join(' ');
+
+        setPlayerName(
+          fullName,
+        );
+      }
+    } catch (e) {
+      console.log(
+        'Telegram SDK unavailable',
+      );
+    }
+  }, []);
+
+  useEffect(() => {
     if (
       typeof window ===
       'undefined'
@@ -106,13 +161,11 @@ export default function Home() {
         window.location.search,
       );
 
-    const roomFromUrl =
+    const room =
       params.get('room');
 
-    if (roomFromUrl) {
-      setRoomCode(
-        roomFromUrl,
-      );
+    if (room) {
+      setRoomCode(room);
     }
   }, []);
 
@@ -261,6 +314,15 @@ export default function Home() {
             ? '🟢 Connected'
             : '🔴 Connecting...'}
         </div>
+
+        {telegramUser && (
+          <div className="mb-4 rounded-2xl bg-blue-600 p-3 text-center font-bold">
+            Telegram:
+            {' '}
+            {telegramUser.username ||
+              telegramUser.first_name}
+          </div>
+        )}
 
         <div className="flex w-full max-w-sm flex-col gap-4">
           <div>
