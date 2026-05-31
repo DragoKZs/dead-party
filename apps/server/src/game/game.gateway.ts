@@ -10,8 +10,6 @@ import { Server, Socket } from 'socket.io';
 
 import { questions } from '../questions/questions';
 
-const rooms: any = {};
-
 const emojiAvatars = [
   '😈',
   '👻',
@@ -20,10 +18,12 @@ const emojiAvatars = [
   '👽',
   '🔥',
   '🦊',
-  '🐼',
-  '🦁',
   '🐸',
+  '🦁',
+  '🐼',
 ];
+
+const rooms: any = {};
 
 @WebSocketGateway({
   cors: {
@@ -35,17 +35,44 @@ export class GameGateway {
   @WebSocketServer()
   server: Server;
 
-  private getRoom(
+  private addKillFeed(
     roomCode: string,
+    text: string,
   ) {
-    return rooms[roomCode];
+    const room = rooms[roomCode];
+
+    if (!room) return;
+
+    room.killFeed.unshift({
+      id: Date.now(),
+      text,
+    });
+
+    room.killFeed =
+      room.killFeed.slice(
+        0,
+        5,
+      );
+
+    this.server.to(roomCode).emit(
+      'killFeedUpdated',
+      room.killFeed,
+    );
   }
 
-  private emitPlayers(
+  private getAlivePlayers(
+    room: any,
+  ) {
+    return room.players.filter(
+      (p: any) =>
+        p.lives > 0,
+    );
+  }
+
+  private updateLeaderboard(
     roomCode: string,
   ) {
-    const room =
-      this.getRoom(roomCode);
+    const room = rooms[roomCode];
 
     if (!room) return;
 
@@ -77,138 +104,44 @@ export class GameGateway {
     );
   }
 
-  private generateMaze(
-    size: number,
-  ) {
-    const maze =
-      Array.from(
-        {
-          length: size,
-        },
-        () =>
-          Array(size).fill(1),
-      );
-
-    const directions = [
-      [0, -2],
-      [0, 2],
-      [-2, 0],
-      [2, 0],
-    ];
-
-    const shuffle = (
-      arr: any[],
-    ) => {
-      for (
-        let i =
-          arr.length - 1;
-        i > 0;
-        i--
-      ) {
-        const j =
-          Math.floor(
-            Math.random() *
-              (i + 1),
-          );
-
-        [arr[i], arr[j]] =
-          [
-            arr[j],
-            arr[i],
-          ];
-      }
-
-      return arr;
-    };
-
-    const carve = (
-      x: number,
-      y: number,
-    ) => {
-      maze[y][x] = 0;
-
-      shuffle([
-        ...directions,
-      ]).forEach(
-        ([dx, dy]) => {
-          const nx =
-            x + dx;
-
-          const ny =
-            y + dy;
-
-          if (
-            ny > 0 &&
-            ny <
-              size - 1 &&
-            nx > 0 &&
-            nx <
-              size - 1 &&
-            maze[ny][nx] ===
-              1
-          ) {
-            maze[
-              y + dy / 2
-            ][
-              x + dx / 2
-            ] = 0;
-
-            carve(
-              nx,
-              ny,
-            );
-          }
-        },
-      );
-    };
-
-    carve(1, 1);
-
-    maze[1][1] = 0;
-
-    maze[size - 2][
-      size - 2
-    ] = 2;
-
-    return maze;
-  }
-
-  private startQuestion(
+  startQuestion(
     roomCode: string,
   ) {
-    const room =
-      this.getRoom(roomCode);
+    const room = rooms[roomCode];
 
     if (!room) return;
 
-    if (room.closed)
-      return;
+    clearInterval(room.timer);
 
-    if (
-      room.miniGameActive
-    )
-      return;
-
-    clearInterval(
-      room.timer,
-    );
-
-    room.questionActive =
-      true;
+    room.questionActive = true;
 
     room.paused = false;
 
-    room.isSpeedRound =
-      room.forceSpeedRound;
-
-    room.isBlackoutRound =
-      room.forceBlackoutRound;
-
-    room.isLastChanceRound =
-      room.forceLastChanceRound;
+    const alivePlayers =
+      this.getAlivePlayers(
+        room,
+      );
 
     room.isFinalRound =
-      room.forceFinalRound;
+      alivePlayers.length <= 3;
+
+    room.isSpeedRound =
+      !room.isFinalRound &&
+      (room.forceSpeedRound ||
+        Math.random() <
+        0.25);
+
+    room.isBlackoutRound =
+      !room.isFinalRound &&
+      (room.forceBlackoutRound ||
+        Math.random() <
+        0.2);
+
+    room.isLastChanceRound =
+      !room.isFinalRound &&
+      (room.forceLastChanceRound ||
+        Math.random() <
+        0.15);
 
     room.forceSpeedRound =
       false;
@@ -219,22 +152,19 @@ export class GameGateway {
     room.forceLastChanceRound =
       false;
 
-    room.forceFinalRound =
-      false;
-
     room.timeLeft =
       room.isFinalRound
-        ? 8
-        : room.isSpeedRound
         ? 5
-        : 10;
+        : room.isSpeedRound
+          ? 5
+          : 10;
 
     const randomQuestion =
       questions[
-        Math.floor(
-          Math.random() *
-            questions.length,
-        )
+      Math.floor(
+        Math.random() *
+        questions.length,
+      )
       ];
 
     room.currentQuestion =
@@ -242,10 +172,12 @@ export class GameGateway {
 
     room.players.forEach(
       (player: any) => {
-        player.hasAnswered =
-          false;
+        player.hasAnswered = false;
 
         player.selectedAnswer =
+          null;
+
+        player.lastResult =
           null;
       },
     );
@@ -253,7 +185,7 @@ export class GameGateway {
     this.server.to(roomCode).emit(
       'questionStarted',
       {
-        ...randomQuestion,
+        ...room.currentQuestion,
 
         isSpeedRound:
           room.isSpeedRound,
@@ -269,6 +201,15 @@ export class GameGateway {
       },
     );
 
+    if (
+      room.isFinalRound
+    ) {
+      this.addKillFeed(
+        roomCode,
+        '🔥 НАЧАЛСЯ ФИНАЛ',
+      );
+    }
+
     this.server.to(roomCode).emit(
       'timerUpdate',
       {
@@ -277,323 +218,218 @@ export class GameGateway {
       },
     );
 
-    room.timer =
-      setInterval(() => {
-        if (
-          room.paused
-        )
-          return;
-
-        room.timeLeft--;
-
-        this.server.to(
-          roomCode,
-        ).emit(
-          'timerUpdate',
-          {
-            timeLeft:
-              room.timeLeft,
-          },
-        );
-
-        const everyoneAnswered =
-          room.players.every(
-            (
-              p: any,
-            ) =>
-              p.hasAnswered ||
-              p.lives <=
-                0,
-          );
-
-        if (
-          everyoneAnswered
-        ) {
-          room.timeLeft = 0;
-        }
-
-        if (
-          room.timeLeft <=
-          0
-        ) {
-          clearInterval(
-            room.timer,
-          );
-
-          room.questionActive =
-            false;
-
-          room.players.forEach(
-            (
-              player: any,
-            ) => {
-              const correct =
-                player.selectedAnswer ===
-                room
-                  .currentQuestion
-                  .correct;
-
-              if (
-                correct
-              ) {
-                player.score +=
-                  room.isFinalRound
-                    ? 300
-                    : room.isSpeedRound
-                    ? 200
-                    : 100;
-
-                player.streak++;
-
-                if (
-                  player.streak >
-                  player.bestStreak
-                ) {
-                  player.bestStreak =
-                    player.streak;
-                }
-              } else {
-                player.streak = 0;
-
-                if (
-                  player.lives >
-                  0
-                ) {
-                  player.lives--;
-                }
-              }
-            },
-          );
-
-          this.server.to(
-            roomCode,
-          ).emit(
-            'questionEnded',
-            {
-              correct:
-                room
-                  .currentQuestion
-                  .correct,
-            },
-          );
-
-          this.emitPlayers(
-            roomCode,
-          );
-        }
-      }, 1000);
-  }
-
-  private startReactionGame(
-    roomCode: string,
-  ) {
-    const room =
-      this.getRoom(roomCode);
-
-    if (!room) return;
-
-    if (
-      room.miniGameActive
-    )
-      return;
-
-    room.questionActive =
-      false;
-
-    room.miniGameActive =
-      true;
-
-    room.currentMiniGame =
-      'reaction';
-
-    room.reactionWinner =
-      null;
-
     this.server.to(roomCode).emit(
-      'reactionWaiting',
+      'gameState',
+      {
+        paused: false,
+      },
     );
 
-    const delay =
-      Math.floor(
-        Math.random() *
-          4000,
-      ) + 2000;
+    room.timer = setInterval(() => {
+      if (room.paused)
+        return;
 
-    setTimeout(() => {
-      room.reactionStarted =
-        true;
+      room.timeLeft--;
 
       this.server.to(
         roomCode,
-      ).emit(
-        'reactionStarted',
-      );
-    }, delay);
-  }
+      ).emit('timerUpdate', {
+        timeLeft:
+          room.timeLeft,
+      });
 
-  private startMazeGame(
-    roomCode: string,
-    difficulty = 'normal',
-  ) {
-    const room =
-      this.getRoom(roomCode);
+      const allAnswered =
+        room.players.every(
+          (p: any) =>
+            p.hasAnswered ||
+            p.lives <= 0,
+        );
 
-    if (!room) return;
+      if (
+        allAnswered &&
+        room.players.length > 0
+      ) {
+        room.timeLeft = 0;
+      }
 
-    if (
-      room.miniGameActive
-    )
-      return;
+      if (
+        room.timeLeft <= 0
+      ) {
+        clearInterval(
+          room.timer,
+        );
 
-    let size = 11;
+        room.questionActive = false;
 
-    let timer = 45;
+        room.players.forEach(
+          (player: any) => {
+            const isCorrect =
+              player.selectedAnswer ===
+              room.currentQuestion
+                .correct;
 
-    if (
-      difficulty ===
-      'easy'
-    ) {
-      size = 9;
+            player.lastResult =
+              isCorrect;
 
-      timer = 60;
-    }
+            if (
+              isCorrect
+            ) {
+              player.correctAnswers++;
 
-    if (
-      difficulty ===
-      'hard'
-    ) {
-      size = 15;
+              player.streak++;
 
-      timer = 45;
-    }
+              if (
+                player.streak >
+                player.bestStreak
+              ) {
+                player.bestStreak =
+                  player.streak;
+              }
 
-    room.questionActive =
-      false;
+              if (
+                player.streak >=
+                3
+              ) {
+                this.server
+                  .to(player.socketId)
+                  .emit(
+                    'streak',
+                    {
+                      streak:
+                        player.streak,
+                    },
+                  );
 
-    room.miniGameActive =
-      true;
+                this.addKillFeed(
+                  roomCode,
+                  `🔥 ${player.name} НА СЕРИИ x${player.streak}`,
+                );
+              }
+            } else {
+              player.streak = 0;
+            }
 
-    room.currentMiniGame =
-      'maze';
+            if (
+              room.isLastChanceRound
+            ) {
+              if (
+                isCorrect
+              ) {
+                if (
+                  player.lives <=
+                  0
+                ) {
+                  player.lives = 1;
 
-    room.maze =
-      this.generateMaze(
-        size,
-      );
+                  this.addKillFeed(
+                    roomCode,
+                    `💀 ${player.name} ВЕРНУЛСЯ В ИГРУ`,
+                  );
+                } else if (
+                  player.lives >=
+                  3
+                ) {
+                  player.score += 100;
+                } else {
+                  player.lives += 1;
+                }
+              }
 
-    room.mazePlayers =
-      {};
+              return;
+            }
 
-    room.mazeTimeLeft =
-      timer;
+            if (
+              isCorrect
+            ) {
+              player.score +=
+                room.isFinalRound
+                  ? 300
+                  : room.isSpeedRound
+                    ? 200
+                    : 100;
+            } else {
+              if (
+                player.lives > 0
+              ) {
+                player.lives--;
 
-    room.players.forEach(
-      (player: any) => {
-        room.mazePlayers[
-          player.telegramId
-        ] = {
-          x: 1,
-          y: 1,
-          finished: false,
-        };
-      },
-    );
-
-    this.server.to(roomCode).emit(
-      'mazeStarted',
-      {
-        maze: room.maze,
-
-        timer,
-
-        difficulty,
-      },
-    );
-
-    room.mazeTimer =
-      setInterval(() => {
-        room.mazeTimeLeft--;
+                if (
+                  player.lives <=
+                  0
+                ) {
+                  this.addKillFeed(
+                    roomCode,
+                    `☠ ${player.name} ВЫБЫЛ`,
+                  );
+                }
+              }
+            }
+          },
+        );
 
         this.server.to(
           roomCode,
         ).emit(
-          'mazeTimer',
+          'questionEnded',
           {
-            timeLeft:
-              room.mazeTimeLeft,
+            correct:
+              room
+                .currentQuestion
+                .correct,
           },
         );
 
+        this.updateLeaderboard(
+          roomCode,
+        );
+
+        const aliveAfter =
+          this.getAlivePlayers(
+            room,
+          );
+
         if (
-          room.mazeTimeLeft <=
-          0
+          aliveAfter.length <=
+          1 &&
+          room.isFinalRound
         ) {
-          clearInterval(
-            room.mazeTimer,
-          );
-
-          room.players.forEach(
-            (
-              player: any,
-            ) => {
-              const mazePlayer =
-                room
-                  .mazePlayers[
-                  player
-                    .telegramId
-                ];
-
-              if (
-                !mazePlayer.finished
-              ) {
-                if (
-                  player.lives >
-                  0
-                ) {
-                  player.lives--;
-                }
-              }
-            },
-          );
-
-          room.miniGameActive =
-            false;
-
-          room.currentMiniGame =
-            null;
+          const winner =
+            aliveAfter[0];
 
           this.server.to(
             roomCode,
           ).emit(
-            'mazeEnded',
+            'gameFinished',
+            {
+              winner,
+              players:
+                room.players,
+            },
           );
 
-          this.emitPlayers(
+          this.addKillFeed(
             roomCode,
+            `👑 ПОБЕДИТЕЛЬ — ${winner?.name || 'НЕТ ПОБЕДИТЕЛЯ'}`,
           );
         }
-      }, 1000);
+      }
+    }, 1000);
   }
 
   @SubscribeMessage(
     'createRoom',
   )
-  createRoom(
+  handleCreateRoom(
     @MessageBody()
     data: any,
     @ConnectedSocket()
     client: Socket,
   ) {
-    rooms[
-      data.roomCode
-    ] = {
-      roomCode:
-        data.roomCode,
+    const { roomCode } =
+      data;
 
+    rooms[roomCode] = {
       players: [],
-
-      currentQuestion:
-        null,
 
       timer: null,
 
@@ -601,74 +437,55 @@ export class GameGateway {
 
       paused: false,
 
-      questionActive:
-        false,
+      questionActive: false,
 
-      closed: false,
+      currentQuestion: null,
 
-      miniGameActive:
-        false,
+      isSpeedRound: false,
 
-      currentMiniGame:
-        null,
+      isBlackoutRound: false,
 
-      reactionStarted:
-        false,
+      isLastChanceRound: false,
 
-      reactionWinner:
-        null,
+      isFinalRound: false,
 
-      maze: null,
+      forceSpeedRound: false,
 
-      mazePlayers: {},
+      forceBlackoutRound: false,
 
-      mazeTimeLeft: 45,
+      forceLastChanceRound: false,
 
-      mazeTimer: null,
-
-      isSpeedRound:
-        false,
-
-      isBlackoutRound:
-        false,
-
-      isLastChanceRound:
-        false,
-
-      isFinalRound:
-        false,
-
-      forceSpeedRound:
-        false,
-
-      forceBlackoutRound:
-        false,
-
-      forceLastChanceRound:
-        false,
-
-      forceFinalRound:
-        false,
+      killFeed: [],
     };
 
-    client.join(
-      data.roomCode,
+    client.join(roomCode);
+
+    client.emit(
+      'roomCreated',
+      {
+        roomCode,
+      },
     );
   }
 
   @SubscribeMessage(
     'joinRoom',
   )
-  joinRoom(
+  handleJoinRoom(
     @MessageBody()
     data: any,
     @ConnectedSocket()
     client: Socket,
   ) {
+    const {
+      roomCode,
+      playerName,
+      telegramId,
+      avatar,
+    } = data;
+
     const room =
-      this.getRoom(
-        data.roomCode,
-      );
+      rooms[roomCode];
 
     if (!room) {
       client.emit(
@@ -682,42 +499,49 @@ export class GameGateway {
       return;
     }
 
-    const existing =
+    const existingPlayer =
       room.players.find(
         (p: any) =>
           p.telegramId ===
-          data.telegramId,
+          telegramId,
       );
 
-    if (existing) {
-      existing.socketId =
+    if (
+      existingPlayer
+    ) {
+      existingPlayer.socketId =
         client.id;
 
-      existing.disconnected =
+      existingPlayer.disconnected =
         false;
 
-      client.join(
-        data.roomCode,
-      );
+      client.join(roomCode);
 
       client.emit(
         'reconnected',
-        existing,
+        existingPlayer,
       );
 
-      this.emitPlayers(
-        data.roomCode,
+      this.addKillFeed(
+        roomCode,
+        `🔄 ${existingPlayer.name} ВЕРНУЛСЯ`,
+      );
+
+      this.updateLeaderboard(
+        roomCode,
       );
 
       return;
     }
 
+    client.join(roomCode);
+
     const randomEmoji =
       emojiAvatars[
-        Math.floor(
-          Math.random() *
-            emojiAvatars.length,
-        )
+      Math.floor(
+        Math.random() *
+        emojiAvatars.length,
+      )
       ];
 
     room.players.push({
@@ -726,14 +550,12 @@ export class GameGateway {
       socketId:
         client.id,
 
-      telegramId:
-        data.telegramId,
+      telegramId,
 
-      name:
-        data.playerName,
+      name: playerName,
 
       avatar:
-        data.avatar ||
+        avatar ||
         randomEmoji,
 
       score: 0,
@@ -744,32 +566,32 @@ export class GameGateway {
 
       bestStreak: 0,
 
-      disconnected:
-        false,
+      correctAnswers: 0,
 
-      eliminated:
-        false,
+      disconnected: false,
 
-      hasAnswered:
-        false,
+      hasAnswered: false,
 
       selectedAnswer:
         null,
+
+      lastResult: null,
     });
 
-    client.join(
-      data.roomCode,
+    this.addKillFeed(
+      roomCode,
+      `🎮 ${playerName} ПОДКЛЮЧИЛСЯ`,
     );
 
-    this.emitPlayers(
-      data.roomCode,
+    this.updateLeaderboard(
+      roomCode,
     );
   }
 
   @SubscribeMessage(
     'joinScreen',
   )
-  joinScreen(
+  handleJoinScreen(
     @MessageBody()
     data: any,
     @ConnectedSocket()
@@ -783,7 +605,7 @@ export class GameGateway {
   @SubscribeMessage(
     'startGame',
   )
-  startGame(
+  handleStartGame(
     @MessageBody()
     data: any,
   ) {
@@ -795,7 +617,7 @@ export class GameGateway {
   @SubscribeMessage(
     'nextQuestion',
   )
-  nextQuestion(
+  handleNextQuestion(
     @MessageBody()
     data: any,
   ) {
@@ -805,233 +627,195 @@ export class GameGateway {
   }
 
   @SubscribeMessage(
-    'startReactionGame',
+    'pauseGame',
   )
-  startReactionGameEvent(
+  handlePauseGame(
     @MessageBody()
     data: any,
-  ) {
-    this.startReactionGame(
-      data.roomCode,
-    );
-  }
-
-  @SubscribeMessage(
-    'reactionClick',
-  )
-  reactionClick(
-    @MessageBody()
-    data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
-      this.getRoom(
-        data.roomCode,
-      );
+      rooms[data.roomCode];
 
     if (!room) return;
 
-    if (
-      !room.reactionStarted
-    )
-      return;
-
-    if (
-      room.reactionWinner
-    )
-      return;
-
-    const player =
-      room.players.find(
-        (p: any) =>
-          p.socketId ===
-          client.id,
-      );
-
-    if (!player) return;
-
-    room.reactionWinner =
-      player;
-
-    player.score += 150;
+    room.paused = true;
 
     this.server.to(
       data.roomCode,
-    ).emit(
-      'reactionEnded',
-      {
-        winner: {
-          name:
-            player.name,
+    ).emit('gameState', {
+      paused: true,
+    });
+  }
 
-          avatar:
-            player.avatar,
-        },
-      },
+  @SubscribeMessage(
+    'resumeGame',
+  )
+  handleResumeGame(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      rooms[data.roomCode];
+
+    if (!room) return;
+
+    room.paused = false;
+
+    this.server.to(
+      data.roomCode,
+    ).emit('gameState', {
+      paused: false,
+    });
+  }
+
+  @SubscribeMessage(
+    'forceSpeedRound',
+  )
+  handleForceSpeedRound(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      rooms[data.roomCode];
+
+    if (!room) return;
+
+    clearInterval(
+      room.timer,
     );
 
-    room.miniGameActive =
+    room.forceSpeedRound =
+      true;
+
+    room.forceBlackoutRound =
       false;
 
-    room.currentMiniGame =
-      null;
+    room.forceLastChanceRound =
+      false;
 
-    this.emitPlayers(
+    room.isFinalRound =
+      false;
+
+    this.addKillFeed(
+      data.roomCode,
+      '⚡ ХОСТ ЗАПУСТИЛ БЛИЦ',
+    );
+
+    this.startQuestion(
       data.roomCode,
     );
   }
 
   @SubscribeMessage(
-    'startMazeGame',
+    'forceBlackoutRound',
   )
-  startMaze(
+  handleForceBlackoutRound(
     @MessageBody()
     data: any,
-  ) {
-    this.startMazeGame(
-      data.roomCode,
-      data.difficulty ||
-        'normal',
-    );
-  }
-
-  @SubscribeMessage(
-    'moveMazePlayer',
-  )
-  moveMazePlayer(
-    @MessageBody()
-    data: any,
-    @ConnectedSocket()
-    client: Socket,
   ) {
     const room =
-      this.getRoom(
-        data.roomCode,
-      );
+      rooms[data.roomCode];
 
     if (!room) return;
 
-    if (
-      !room.miniGameActive
-    )
-      return;
-
-    const player =
-      room.players.find(
-        (p: any) =>
-          p.socketId ===
-          client.id,
-      );
-
-    if (!player) return;
-
-    const mazePlayer =
-      room.mazePlayers[
-        player.telegramId
-      ];
-
-    let nx = mazePlayer.x;
-
-    let ny = mazePlayer.y;
-
-    if (
-      data.direction ===
-      'up'
-    )
-      ny--;
-
-    if (
-      data.direction ===
-      'down'
-    )
-      ny++;
-
-    if (
-      data.direction ===
-      'left'
-    )
-      nx--;
-
-    if (
-      data.direction ===
-      'right'
-    )
-      nx++;
-
-    const tile =
-      room.maze[ny]?.[nx];
-
-    if (
-      tile === undefined
-    )
-      return;
-
-    if (tile === 1)
-      return;
-
-    mazePlayer.x = nx;
-
-    mazePlayer.y = ny;
-
-    if (tile === 2) {
-      mazePlayer.finished =
-        true;
-
-      if (
-        player.lives < 3
-      ) {
-        player.lives++;
-      } else {
-        player.score += 50;
-      }
-
-      if (
-        player.eliminated
-      ) {
-        player.eliminated =
-          false;
-
-        player.lives = 1;
-      }
-
-      this.server.to(
-        player.socketId,
-      ).emit(
-        'achievement',
-        {
-          text: '🧩 ЛАБИРИНТ ПРОЙДЕН',
-        },
-      );
-
-      this.server.to(
-        data.roomCode,
-      ).emit(
-        'mazePlayerFinished',
-        {
-          player: {
-            name:
-              player.name,
-
-            avatar:
-              player.avatar,
-          },
-        },
-      );
-    }
-
-    this.server.to(
-      player.socketId,
-    ).emit(
-      'mazePosition',
-      {
-        x: mazePlayer.x,
-
-        y: mazePlayer.y,
-      },
+    clearInterval(
+      room.timer,
     );
 
-    this.emitPlayers(
+    room.forceSpeedRound =
+      false;
+
+    room.forceBlackoutRound =
+      true;
+
+    room.forceLastChanceRound =
+      false;
+
+    room.isFinalRound =
+      false;
+
+    this.addKillFeed(
+      data.roomCode,
+      '🌑 ХОСТ ЗАПУСТИЛ ТЕМНОТУ',
+    );
+
+    this.startQuestion(
+      data.roomCode,
+    );
+  }
+
+  @SubscribeMessage(
+    'forceLastChanceRound',
+  )
+  handleForceLastChanceRound(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      rooms[data.roomCode];
+
+    if (!room) return;
+
+    clearInterval(
+      room.timer,
+    );
+
+    room.forceSpeedRound =
+      false;
+
+    room.forceBlackoutRound =
+      false;
+
+    room.forceLastChanceRound =
+      true;
+
+    room.isFinalRound =
+      false;
+
+    this.addKillFeed(
+      data.roomCode,
+      '☠ ХОСТ ЗАПУСТИЛ ПОСЛЕДНИЙ ШАНС',
+    );
+
+    this.startQuestion(
+      data.roomCode,
+    );
+  }
+
+  @SubscribeMessage(
+    'forceFinalRound',
+  )
+  handleForceFinalRound(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      rooms[data.roomCode];
+
+    if (!room) return;
+
+    clearInterval(
+      room.timer,
+    );
+
+    room.forceSpeedRound =
+      false;
+
+    room.forceBlackoutRound =
+      false;
+
+    room.forceLastChanceRound =
+      false;
+
+    room.isFinalRound =
+      true;
+
+    this.addKillFeed(
+      data.roomCode,
+      '🔥 ХОСТ ЗАПУСТИЛ ФИНАЛ',
+    );
+
+    this.startQuestion(
       data.roomCode,
     );
   }
@@ -1039,22 +823,23 @@ export class GameGateway {
   @SubscribeMessage(
     'submitAnswer',
   )
-  submitAnswer(
+  handleSubmitAnswer(
     @MessageBody()
     data: any,
     @ConnectedSocket()
     client: Socket,
   ) {
     const room =
-      this.getRoom(
-        data.roomCode,
-      );
+      rooms[data.roomCode];
 
     if (!room) return;
 
     if (
       !room.questionActive
     )
+      return;
+
+    if (room.paused)
       return;
 
     const player =
@@ -1099,8 +884,9 @@ export class GameGateway {
         player.disconnected =
           true;
 
-        this.emitPlayers(
+        this.addKillFeed(
           room.roomCode,
+          `📡 ${player.name} ОТКЛЮЧИЛСЯ`,
         );
       }
     });
