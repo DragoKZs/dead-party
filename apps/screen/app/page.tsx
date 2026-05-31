@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -85,6 +86,34 @@ export default function ScreenPage() {
     total: 0,
   });
 
+  // 💣 BOMB PASS
+
+  const [
+    bombHolder,
+
+    setBombHolder,
+  ] = useState('');
+
+  const [
+    bombTransfer,
+
+    setBombTransfer,
+  ] = useState('');
+
+  const [
+    bombExploded,
+
+    setBombExploded,
+  ] = useState(false);
+
+  const [
+    explodedPlayer,
+
+    setExplodedPlayer,
+  ] = useState<any>(
+    null,
+  );
+
   useEffect(() => {
     socket.on(
       'playersUpdated',
@@ -111,6 +140,8 @@ export default function ScreenPage() {
         setReactionWinner(
           null,
         );
+
+        setBombHolder('');
       },
     );
 
@@ -155,10 +186,10 @@ export default function ScreenPage() {
     );
 
     socket.on(
-      'reactionEnded',
+      'reactionWinner',
       (data) => {
         setReactionWinner(
-          data.winner,
+          data.player,
         );
 
         setMode(
@@ -191,6 +222,8 @@ export default function ScreenPage() {
           failed: 0,
           total: 0,
         });
+
+        setBombHolder('');
       },
     );
 
@@ -231,6 +264,71 @@ export default function ScreenPage() {
       },
     );
 
+    // 💣 BOMB PASS
+
+    socket.on(
+      'bombPassStarted',
+      (data) => {
+        setBombHolder(
+          data.holder,
+        );
+
+        setBombTransfer('');
+
+        setBombExploded(
+          false,
+        );
+
+        setQuestion(null);
+
+        setReactionWinner(
+          null,
+        );
+
+        setMode('idle');
+      },
+    );
+
+    socket.on(
+      'bombTransferred',
+      (data) => {
+        setBombTransfer(
+          data.to,
+        );
+
+        setBombHolder(
+          data.to,
+        );
+
+        setTimeout(() => {
+          setBombTransfer(
+            '',
+          );
+        }, 1200);
+      },
+    );
+
+    socket.on(
+      'bombExploded',
+      (data) => {
+        setBombExploded(
+          true,
+        );
+
+        setExplodedPlayer(
+          data.player,
+        );
+
+        setBombHolder('');
+
+        setTimeout(() => {
+          setBombExploded(
+            false,
+          );
+        }, 4000);
+      },
+    );
+
     return () => {
       socket.off(
         'playersUpdated',
@@ -257,7 +355,7 @@ export default function ScreenPage() {
       );
 
       socket.off(
-        'reactionEnded',
+        'reactionWinner',
       );
 
       socket.off(
@@ -278,6 +376,18 @@ export default function ScreenPage() {
 
       socket.off(
         'mazeEnded',
+      );
+
+      socket.off(
+        'bombPassStarted',
+      );
+
+      socket.off(
+        'bombTransferred',
+      );
+
+      socket.off(
+        'bombExploded',
       );
     };
   }, []);
@@ -338,6 +448,72 @@ export default function ScreenPage() {
           >
             ПОДКЛЮЧИТЬ
           </button>
+        </div>
+      </main>
+    );
+  }
+
+  // 💥 EXPLOSION
+
+  if (bombExploded) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-red-950 text-white">
+
+        <div className="absolute inset-0 animate-ping bg-red-600 opacity-30" />
+
+        <div className="relative z-10 text-center">
+
+          <div className="mb-8 animate-bounce text-[220px]">
+            💥
+          </div>
+
+          <div className="mb-6 text-7xl font-black">
+            БОМБА
+            ВЗОРВАЛАСЬ
+          </div>
+
+          {explodedPlayer && (
+            <div className="text-6xl font-black text-yellow-400">
+              {
+                explodedPlayer.avatar
+              }{' '}
+              {
+                explodedPlayer.name
+              }
+            </div>
+          )}
+        </div>
+      </main>
+    );
+  }
+
+  // 💣 BOMB PASS
+
+  if (bombHolder) {
+    return (
+      <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black text-white">
+
+        <div className="absolute inset-0 animate-pulse bg-red-950 opacity-40" />
+
+        <div className="relative z-10 flex flex-col items-center">
+
+          <div className="mb-8 animate-bounce text-[200px]">
+            💣
+          </div>
+
+          <div className="mb-4 text-6xl font-black text-red-500">
+            ПЕРЕДАЙ БОМБУ
+          </div>
+
+          <div className="mb-8 text-5xl font-black text-white">
+            {bombHolder}
+          </div>
+
+          {bombTransfer && (
+            <div className="animate-pulse text-4xl font-black text-yellow-400">
+              ➜ {bombTransfer}
+            </div>
+          )}
         </div>
       </main>
     );
