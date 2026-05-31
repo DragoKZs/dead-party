@@ -56,28 +56,6 @@ export default function HostPage() {
     total: 0,
   });
 
-  // 💣 BOMB PASS
-
-  const [
-    showBombModal,
-    setShowBombModal,
-  ] = useState(false);
-
-  const [
-    bombRange,
-    setBombRange,
-  ] = useState('5-10');
-
-  const [
-    bombHolder,
-    setBombHolder,
-  ] = useState('');
-
-  const [
-    bombActive,
-    setBombActive,
-  ] = useState(false);
-
   useEffect(() => {
     socket.on(
       'playersUpdated',
@@ -96,14 +74,6 @@ export default function HostPage() {
         );
 
         setCurrentMiniGame(
-          '',
-        );
-
-        setBombActive(
-          false,
-        );
-
-        setBombHolder(
           '',
         );
 
@@ -139,8 +109,6 @@ export default function HostPage() {
       },
     );
 
-    // ⚡ REACTION
-
     socket.on(
       'reactionWaiting',
       () => {
@@ -167,8 +135,6 @@ export default function HostPage() {
       },
     );
 
-    // 🧩 MAZE
-
     socket.on(
       'mazeStarted',
       () => {
@@ -194,59 +160,6 @@ export default function HostPage() {
     socket.on(
       'mazeEnded',
       () => {
-        setMiniGameActive(
-          false,
-        );
-
-        setCurrentMiniGame(
-          '',
-        );
-      },
-    );
-
-    // 💣 BOMB PASS
-
-    socket.on(
-      'bombPassStarted',
-      (data) => {
-        setBombActive(
-          true,
-        );
-
-        setMiniGameActive(
-          true,
-        );
-
-        setCurrentMiniGame(
-          '💣 БОМБА',
-        );
-
-        setBombHolder(
-          data.holder,
-        );
-      },
-    );
-
-    socket.on(
-      'bombTransferred',
-      (data) => {
-        setBombHolder(
-          data.to,
-        );
-      },
-    );
-
-    socket.on(
-      'bombExploded',
-      () => {
-        setBombActive(
-          false,
-        );
-
-        setBombHolder(
-          '',
-        );
-
         setMiniGameActive(
           false,
         );
@@ -293,18 +206,6 @@ export default function HostPage() {
 
       socket.off(
         'mazeEnded',
-      );
-
-      socket.off(
-        'bombPassStarted',
-      );
-
-      socket.off(
-        'bombTransferred',
-      );
-
-      socket.off(
-        'bombExploded',
       );
 
       socket.off(
@@ -394,7 +295,7 @@ export default function HostPage() {
     )
       return;
 
-      socket.emit(
+    socket.emit(
       'startMazeGame',
       {
         roomCode,
@@ -449,55 +350,6 @@ export default function HostPage() {
         {
           roomCode,
         },
-      );
-    };
-
-  // 💣 START BOMB PASS
-
-  const startBombPass =
-    () => {
-      if (
-        miniGameActive
-      )
-        return;
-
-      const split =
-        bombRange
-          .split('-')
-          .map(Number);
-
-      if (
-        split.length !==
-          2 ||
-        Number.isNaN(
-          split[0],
-        ) ||
-        Number.isNaN(
-          split[1],
-        )
-      ) {
-        alert(
-          'Введите диапазон правильно. Например: 5-10',
-        );
-
-        return;
-      }
-
-      socket.emit(
-        'startBombPass',
-        {
-          roomCode,
-
-          min:
-            split[0],
-
-          max:
-            split[1],
-        },
-      );
-
-      setShowBombModal(
-        false,
       );
     };
 
@@ -573,8 +425,6 @@ export default function HostPage() {
         </div>
       </div>
 
-      {/* STATS */}
-
       <div className="mb-8 grid grid-cols-4 gap-4">
         <div className="rounded-3xl border border-red-600 bg-red-600/10 p-6 text-center">
           <div className="text-5xl font-black">
@@ -632,24 +482,6 @@ export default function HostPage() {
         </div>
       </div>
 
-      {/* 💣 STATUS */}
-
-      {bombActive && (
-        <div className="mb-8 rounded-3xl border border-red-500 bg-red-500/10 p-8">
-          <div className="mb-4 text-5xl font-black text-red-500">
-            💣 БОМБА
-            АКТИВНА
-          </div>
-
-          <div className="text-3xl font-black">
-            У ИГРОКА:{' '}
-            {bombHolder}
-          </div>
-        </div>
-      )}
-
-      {/* 🧩 MAZE */}
-
       {miniGameActive &&
         currentMiniGame ===
           '🧩 MAZE RUN' && (
@@ -691,8 +523,6 @@ export default function HostPage() {
             </div>
           </div>
         )}
-
-      {/* CONTROLS */}
 
       <div className="mb-8 grid grid-cols-2 gap-4">
         <button
@@ -759,14 +589,12 @@ export default function HostPage() {
         </button>
       </div>
 
-      {/* MINI GAMES */}
-
       <div className="mb-8">
         <div className="mb-4 text-4xl font-black">
           🎮 МИНИ-ИГРЫ
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <button
             disabled={
               miniGameActive
@@ -801,29 +629,8 @@ export default function HostPage() {
           >
             🧩 MAZE RUN
           </button>
-
-          <button
-            disabled={
-              miniGameActive
-            }
-            onClick={() =>
-              setShowBombModal(
-                true,
-              )
-            }
-            className={`rounded-3xl p-6 text-3xl font-black
-            ${
-              miniGameActive
-                ? 'bg-gray-700 opacity-40'
-                : 'bg-red-700'
-            }`}
-          >
-            💣 БОМБА
-          </button>
         </div>
       </div>
-
-      {/* SPECIAL ROUNDS */}
 
       <div className="mb-8">
         <div className="mb-4 text-4xl font-black">
@@ -870,8 +677,6 @@ export default function HostPage() {
           </button>
         </div>
       </div>
-
-      {/* PLAYERS */}
 
       <div>
         <div className="mb-4 text-4xl font-black">
@@ -960,57 +765,6 @@ export default function HostPage() {
           )}
         </div>
       </div>
-
-      {/* 💣 MODAL */}
-
-      {showBombModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
-          <div className="w-full max-w-md rounded-3xl border border-red-500 bg-gray-950 p-8">
-            <div className="mb-6 text-5xl font-black text-red-500">
-              💣 БОМБА
-            </div>
-
-            <div className="mb-4 text-2xl text-gray-400">
-              Введите диапазон
-              взрыва
-            </div>
-
-            <input
-              type="text"
-              value={bombRange}
-              onChange={(e) =>
-                setBombRange(
-                  e.target.value,
-                )
-              }
-              placeholder="5-10"
-              className="mb-6 w-full rounded-2xl bg-black p-5 text-3xl font-black outline-none"
-            />
-
-            <div className="flex gap-4">
-              <button
-                onClick={
-                  startBombPass
-                }
-                className="flex-1 rounded-2xl bg-red-600 p-5 text-2xl font-black"
-              >
-                ЗАПУСТИТЬ
-              </button>
-
-              <button
-                onClick={() =>
-                  setShowBombModal(
-                    false,
-                  )
-                }
-                className="flex-1 rounded-2xl bg-gray-800 p-5 text-2xl font-black"
-              >
-                ОТМЕНА
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

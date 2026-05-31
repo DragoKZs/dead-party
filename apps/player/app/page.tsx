@@ -127,36 +127,6 @@ export default function Home() {
     setNotification,
   ] = useState('');
 
-  // 💣 BOMB PASS
-
-  const [
-    bombTargets,
-
-    setBombTargets,
-  ] = useState<any[]>(
-    [],
-  );
-
-  const [
-    hasBomb,
-
-    setHasBomb,
-  ] = useState(false);
-
-  const [
-    bombExploded,
-
-    setBombExploded,
-  ] = useState(false);
-
-  const [
-    explodedPlayer,
-
-    setExplodedPlayer,
-  ] = useState<any>(
-    null,
-  );
-
   const randomEmoji =
     useMemo(() => {
       return emojiAvatars[
@@ -405,44 +375,6 @@ export default function Home() {
       },
     );
 
-    // 💣 BOMB PASS
-
-    socket.on(
-      'bombAssigned',
-      (data) => {
-        setHasBomb(true);
-
-        setBombTargets(
-          data.targets,
-        );
-      },
-    );
-
-    socket.on(
-      'bombExploded',
-      (data) => {
-        setBombExploded(
-          true,
-        );
-
-        setHasBomb(false);
-
-        setBombTargets(
-          [],
-        );
-
-        setExplodedPlayer(
-          data.player,
-        );
-
-        setTimeout(() => {
-          setBombExploded(
-            false,
-          );
-        }, 3000);
-      },
-    );
-
     return () => {
       socket.off(
         'questionStarted',
@@ -494,14 +426,6 @@ export default function Home() {
 
       socket.off(
         'mazePlayerFinished',
-      );
-
-      socket.off(
-        'bombAssigned',
-      );
-
-      socket.off(
-        'bombExploded',
       );
     };
   }, [playerName]);
@@ -564,28 +488,6 @@ export default function Home() {
         direction,
       },
     );
-  };
-
-  // 💣 TRANSFER
-
-  const transferBomb = (
-    toId: string,
-  ) => {
-    socket.emit(
-      'transferBomb',
-      {
-        roomCode,
-
-        fromId:
-          telegramId,
-
-        toId,
-      },
-    );
-
-    setHasBomb(false);
-
-    setBombTargets([]);
   };
 
   const uploadAvatar =
@@ -939,4 +841,68 @@ export default function Home() {
       </main>
     );
   }
+
+  return (
+    <main className="flex min-h-screen flex-col bg-black p-4 text-white">
+      {notification && (
+        <div className="absolute left-1/2 top-8 z-50 -translate-x-1/2 animate-bounce rounded-3xl border-2 border-yellow-400 bg-black px-8 py-4 text-2xl font-black text-yellow-400">
+          {notification}
+        </div>
+      )}
+
+      <div className="mb-6 flex items-center justify-between">
+        <div className="text-2xl font-black">
+          {playerName}
+        </div>
+
+        <div className="text-5xl font-black text-yellow-400">
+          {timeLeft}
+        </div>
+      </div>
+
+      {question && (
+        <div className="flex flex-1 flex-col gap-4">
+          <div className="rounded-3xl bg-gray-900 p-6 text-center text-3xl font-black">
+            {question.text}
+          </div>
+
+          <div className="grid gap-4">
+            {question.answers.map(
+              (
+                answer: string,
+                index: number,
+              ) => (
+                <button
+                  key={index}
+                  disabled={locked}
+                  onClick={() =>
+                    submitAnswer(
+                      index,
+                    )
+                  }
+                  className={`min-h-[90px] rounded-3xl p-6 text-2xl font-black
+                  ${
+                    questionEnded &&
+                    correctAnswer ===
+                      index
+                      ? 'bg-green-600'
+                      : 'bg-red-600'
+                  }`}
+                >
+                  {answer}
+                </button>
+              ),
+            )}
+          </div>
+
+          {locked &&
+            !questionEnded && (
+              <div className="rounded-2xl bg-blue-600 p-5 text-center text-2xl font-black">
+                ОТВЕТ ПРИНЯТ
+              </div>
+            )}
+        </div>
+      )}
+    </main>
+  );
 }
