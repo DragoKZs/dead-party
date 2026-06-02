@@ -16,6 +16,8 @@ import { forceRound } from './special-rounds/force-round';
 
 import { questions } from '../questions/questions';
 
+import { startSurvivalRun, submitSurvivalAnswer, finishSurvivalRound, } from './mini-games/survival-run.game';
+
 import { startBombPassGame, passBomb, } from './mini-games/bomb-pass.game';
 
 const rooms: any = {};
@@ -662,6 +664,17 @@ export class GameGateway {
       bombPassCount: 0,
 
       explodeAt: 0,
+
+      survivalRound: 1,
+
+      survivalAnswers:
+        {},
+
+      survivalPlayers:
+        [],
+
+      currentSurvivalQuestion:
+        null,
     };
 
     client.join(
@@ -1023,6 +1036,124 @@ export class GameGateway {
         explodeAt:
           result.explodeAt,
       },
+    );
+  }
+
+  @SubscribeMessage(
+    'startSurvivalRun',
+  )
+  startSurvivalRunEvent(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      this.getRoom(
+        data.roomCode,
+      );
+
+    if (!room) return;
+
+    const startNextRound =
+      () => {
+        const question =
+          room.currentSurvivalQuestion ||
+          startSurvivalRun(
+            room,
+          );
+
+        this.server.to(
+          data.roomCode,
+        ).emit(
+          room.survivalRound ===
+            1
+            ? 'survivalRunStarted'
+            : 'survivalNextRound',
+          {
+            question,
+
+            round:
+              room.survivalRound,
+
+            eliminated:
+              [],
+
+            alivePlayers:
+              room.survivalPlayers.filter(
+                (
+                  p: any,
+                ) =>
+                  p.alive,
+              ),
+          },
+        );
+
+        setTimeout(() => {
+          const result =
+            finishSurvivalRound(
+              room,
+            );
+
+          this.server.to(
+            data.roomCode,
+          ).emit(
+            'survivalRoundEnded',
+            {
+              eliminated:
+                result.eliminated,
+
+              alivePlayers:
+                result.alivePlayers ||
+                result.winners,
+            },
+          );
+
+          if (
+            result.finished
+          ) {
+            this.server.to(
+              data.roomCode,
+            ).emit(
+              'survivalRunFinished',
+              {
+                winners:
+                  result.winners,
+              },
+            );
+
+            this.emitPlayers(
+              data.roomCode,
+            );
+
+            return;
+          }
+
+          setTimeout(() => {
+            startNextRound();
+          }, 3000);
+        }, 10000);
+      };
+
+    startNextRound();
+  }
+
+  @SubscribeMessage(
+    'submitSurvivalAnswer',
+  )
+  submitSurvivalAnswerEvent(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      this.getRoom(
+        data.roomCode,
+      );
+
+    if (!room) return;
+
+    submitSurvivalAnswer(
+      room,
+      data.telegramId,
+      data.answer,
     );
   }
 

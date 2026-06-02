@@ -41,7 +41,8 @@ type GameMode =
   | 'reaction-active'
   | 'reaction-finished'
   | 'maze'
-  | 'bomb-pass';
+  | 'bomb-pass'
+  | 'survival-run';
 
 export default function Home() {
   const [mode, setMode] =
@@ -160,6 +161,30 @@ export default function Home() {
   ] = useState<any>(
     null,
   );
+
+  const [
+    survivalQuestion,
+    setSurvivalQuestion,
+  ] = useState<any>(
+    null,
+  );
+
+  const [
+    survivalRound,
+    setSurvivalRound,
+  ] = useState(1);
+
+  const [
+    survivalLocked,
+    setSurvivalLocked,
+  ] = useState(false);
+
+  const [
+    survivalResult,
+    setSurvivalResult,
+  ] = useState<
+    'alive' | 'dead' | null
+  >(null);
 
   const randomEmoji =
     useMemo(() => {
@@ -473,6 +498,76 @@ export default function Home() {
       },
     );
 
+    socket.on(
+      'survivalRunStarted',
+      (data) => {
+        setMode(
+          'survival-run',
+        );
+
+        setSurvivalQuestion(
+          data.question,
+        );
+
+        setSurvivalRound(
+          data.round,
+        );
+
+        setSurvivalLocked(
+          false,
+        );
+
+        setSurvivalResult(
+          null,
+        );
+      },
+    );
+
+    socket.on(
+      'survivalNextRound',
+      (data) => {
+        const alive =
+          data.alivePlayers.some(
+            (p: any) =>
+              p.telegramId ===
+              telegramId,
+          );
+
+        setSurvivalResult(
+          alive
+            ? 'alive'
+            : 'dead',
+        );
+
+        setTimeout(() => {
+          setSurvivalQuestion(
+            data.question,
+          );
+
+          setSurvivalRound(
+            data.round,
+          );
+
+          setSurvivalLocked(
+            false,
+          );
+
+          setSurvivalResult(
+            null,
+          );
+        }, 3000);
+      },
+    );
+
+    socket.on(
+      'survivalRunFinished',
+      () => {
+        setTimeout(() => {
+          setMode('menu');
+        }, 5000);
+      },
+    );
+
     return () => {
       socket.off(
         'questionStarted',
@@ -528,6 +623,18 @@ export default function Home() {
 
       socket.off(
         'mazePlayerFinished',
+      );
+
+      socket.off(
+        'survivalRunStarted',
+      );
+
+      socket.off(
+        'survivalNextRound',
+      );
+
+      socket.off(
+        'survivalRunFinished',
       );
     };
   }, [playerName]);
@@ -1082,6 +1189,101 @@ export default function Home() {
                 У КОГО-ТО 💣
               </div>
             )}
+          </>
+        )}
+      </main>
+    );
+  }
+
+  if (
+    mode ===
+    'survival-run'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
+        <div className="mb-6 text-5xl font-black text-yellow-400">
+          РАУНД {
+            survivalRound
+          } / 5
+        </div>
+
+        {survivalResult ? (
+          <div className="flex flex-col items-center">
+            <div className="mb-8 text-[120px]">
+              {survivalResult ===
+                'alive'
+                ? '✅'
+                : '💀'}
+            </div>
+
+            <div className="text-5xl font-black">
+              {survivalResult ===
+                'alive'
+                ? 'ТЫ ВЫЖИЛ'
+                : 'ТЫ ПРОИГРАЛ'}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-10 rounded-3xl bg-gray-900 p-8 text-center text-4xl font-black">
+              {
+                survivalQuestion?.question
+              }
+            </div>
+
+            <div className="grid w-full max-w-xl gap-6">
+              <button
+                disabled={
+                  survivalLocked
+                }
+                onClick={() => {
+                  setSurvivalLocked(
+                    true,
+                  );
+
+                  socket.emit(
+                    'submitSurvivalAnswer',
+                    {
+                      roomCode,
+                      telegramId,
+                      answer:
+                        'left',
+                    },
+                  );
+                }}
+                className="rounded-3xl bg-blue-600 p-8 text-4xl font-black active:scale-95"
+              >
+                {
+                  survivalQuestion?.left
+                }
+              </button>
+
+              <button
+                disabled={
+                  survivalLocked
+                }
+                onClick={() => {
+                  setSurvivalLocked(
+                    true,
+                  );
+
+                  socket.emit(
+                    'submitSurvivalAnswer',
+                    {
+                      roomCode,
+                      telegramId,
+                      answer:
+                        'right',
+                    },
+                  );
+                }}
+                className="rounded-3xl bg-red-600 p-8 text-4xl font-black active:scale-95"
+              >
+                {
+                  survivalQuestion?.right
+                }
+              </button>
+            </div>
           </>
         )}
       </main>

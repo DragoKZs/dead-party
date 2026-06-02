@@ -22,7 +22,8 @@ type ScreenMode =
   | 'reaction-active'
   | 'reaction-finished'
   | 'maze'
-  | 'bomb-pass';
+  | 'bomb-pass'
+  | 'survival-run';
 
 export default function ScreenPage() {
   const [mode, setMode] =
@@ -99,6 +100,42 @@ export default function ScreenPage() {
   ] = useState<any>(
     null,
   );
+
+  const [
+    survivalQuestion,
+    setSurvivalQuestion,
+  ] = useState<any>(
+    null,
+  );
+
+  const [
+    survivalPlayers,
+    setSurvivalPlayers,
+  ] = useState<any[]>(
+    [],
+  );
+
+  const [
+    survivalRound,
+    setSurvivalRound,
+  ] = useState(1);
+
+  const [
+    eliminatedPlayers,
+    setEliminatedPlayers,
+  ] = useState<string[]>(
+    [],
+  );
+
+  const [
+    playerChoices,
+    setPlayerChoices,
+  ] = useState<
+    Record<
+      string,
+      'left' | 'right'
+    >
+  >({});
 
   useEffect(() => {
     socket.on(
@@ -285,6 +322,74 @@ export default function ScreenPage() {
       },
     );
 
+    socket.on(
+      'survivalRunStarted',
+      (data) => {
+        setMode(
+          'survival-run',
+        );
+
+        setSurvivalQuestion(
+          data.question,
+        );
+
+        setSurvivalRound(
+          data.round,
+        );
+
+        setEliminatedPlayers(
+          [],
+        );
+      },
+    );
+
+    socket.on(
+      'survivalNextRound',
+      (data) => {
+        setEliminatedPlayers(
+          data.eliminated,
+        );
+
+        setTimeout(() => {
+          setSurvivalQuestion(
+            data.question,
+          );
+
+          setSurvivalRound(
+            data.round,
+          );
+
+          setEliminatedPlayers(
+            [],
+          );
+        }, 3000);
+      },
+    );
+
+    socket.on(
+      'survivalRunFinished',
+      () => {
+        setTimeout(() => {
+          setMode('idle');
+        }, 5000);
+      },
+    );
+
+    socket.on(
+      'survivalPlayerMoved',
+      (data) => {
+        setPlayerChoices(
+          (prev) => ({
+            ...prev,
+            [
+              data.telegramId
+            ]:
+              data.answer,
+          }),
+        );
+      },
+    );
+
     return () => {
       socket.off(
         'playersUpdated',
@@ -292,6 +397,22 @@ export default function ScreenPage() {
 
       socket.off(
         'questionStarted',
+      );
+
+      socket.off(
+        'survivalRunStarted',
+      );
+
+      socket.off(
+        'survivalNextRound',
+      );
+
+      socket.off(
+        'survivalRunFinished',
+      );
+
+      socket.off(
+        'survivalPlayerMoved',
       );
 
       socket.off(
@@ -464,6 +585,174 @@ export default function ScreenPage() {
             </div>
           </>
         )}
+      </main>
+    );
+  }
+
+  if (
+    mode ===
+    'survival-run'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col bg-black p-8 text-white">
+        <div className="mb-6 flex items-center justify-between">
+          <div className="text-6xl font-black text-yellow-400">
+            ROUND {
+              survivalRound
+            } / 5
+          </div>
+
+          <div className="text-5xl font-black">
+            🏃 SURVIVAL
+          </div>
+        </div>
+
+        <div className="mb-10 rounded-3xl bg-gray-900 p-8 text-center text-5xl font-black">
+          {
+            survivalQuestion?.question
+          }
+        </div>
+
+        <div className="grid flex-1 grid-cols-2 gap-8">
+          <div className="flex flex-col items-center rounded-[40px] border-8 border-blue-500 bg-blue-950 p-8">
+            <div className="mb-8 text-6xl font-black">
+              {
+                survivalQuestion?.left
+              }
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-8">
+
+              {players
+                .filter(
+                  (
+                    player: any,
+                  ) =>
+                    playerChoices[
+                    player.telegramId
+                    ] === 'left',
+                )
+                .map(
+                  (
+                    player: any,
+                  ) => (
+                    <div
+                      key={
+                        player.telegramId
+                      }
+                      className={`flex flex-col items-center transition-all duration-700
+                  ${eliminatedPlayers.includes(
+                        player.telegramId,
+                      )
+                          ? 'translate-y-96 opacity-0'
+                          : ''
+                        }`}
+                    >
+                      {player.avatar?.startsWith(
+                        'http',
+                      ) ||
+                        player.avatar?.startsWith(
+                          'data:image',
+                        ) ? (
+                        <img
+                          src={
+                            player.avatar
+                          }
+                          alt="avatar"
+                          className="h-24 w-24 rounded-full border-4 border-white object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-black text-5xl">
+                          {
+                            player.avatar
+                          }
+                        </div>
+                      )}
+
+                      <div className="mt-3 text-2xl font-black">
+                        {
+                          player.name
+                        }
+                      </div>
+
+                      <div className="mt-2 text-6xl">
+                        🧍
+                      </div>
+                    </div>
+                  ),
+                )}
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center rounded-[40px] border-8 border-red-500 bg-red-950 p-8">
+            <div className="mb-8 text-6xl font-black">
+              {
+                survivalQuestion?.right
+              }
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-8">
+              {players
+                .filter(
+                  (
+                    player: any,
+                  ) =>
+                    playerChoices[
+                    player.telegramId
+                    ] === 'right',
+                )
+                .map(
+                  (
+                    player: any,
+                  ) => (
+                    <div
+                      key={
+                        player.telegramId
+                      }
+                      className={`flex flex-col items-center transition-all duration-700
+                  ${eliminatedPlayers.includes(
+                        player.telegramId,
+                      )
+                          ? 'translate-y-96 opacity-0'
+                          : ''
+                        }`}
+                    >
+                      {player.avatar?.startsWith(
+                        'http',
+                      ) ||
+                        player.avatar?.startsWith(
+                          'data:image',
+                        ) ? (
+                        <img
+                          src={
+                            player.avatar
+                          }
+                          alt="avatar"
+                          className="h-24 w-24 rounded-full border-4 border-white object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-black text-5xl">
+                          {
+                            player.avatar
+                          }
+                        </div>
+                      )}
+
+                      <div className="mt-3 text-2xl font-black">
+                        {
+                          player.name
+                        }
+                      </div>
+
+                      <div className="mt-2 text-6xl">
+                        🧍
+                      </div>
+                    </div>
+                  ),
+                )}
+            </div>
+          </div>
+        </div>
       </main>
     );
   }

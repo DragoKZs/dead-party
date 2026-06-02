@@ -523,7 +523,7 @@ export default function HostPage() {
           </div>
         )}
 
-      <div className="mb-8 grid grid-cols-3 gap-4">
+      <div className="mb-8 grid grid-cols-2 gap-4">
         <button
           disabled={
             miniGameActive
@@ -607,6 +607,28 @@ export default function HostPage() {
           >
             ⚡ REACTION
             GAME
+          </button>
+
+
+          <button
+            disabled={
+              miniGameActive
+            }
+            onClick={() => {
+              socket.emit(
+                'startSurvivalRun',
+                {
+                  roomCode,
+                },
+              );
+            }}
+            className={`rounded-3xl p-6 text-3xl font-black
+            ${miniGameActive
+                ? 'bg-gray-700 opacity-40'
+                : 'bg-yellow-600'
+              }`}
+          >
+            🏃 SURVIVAL
           </button>
 
           <button
