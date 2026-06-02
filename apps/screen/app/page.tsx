@@ -656,9 +656,6 @@ export default function ScreenPage() {
                   (
                     player: any,
                   ) =>
-                    !deadPlayers.includes(
-                      player.telegramId,
-                    ) &&
                     playerChoices[
                     player.telegramId
                     ] === 'left',
@@ -666,6 +663,7 @@ export default function ScreenPage() {
                 .map(
                   (
                     player: any,
+                    index: number,
                   ) => (
                     <motion.div
                       key={
@@ -679,7 +677,8 @@ export default function ScreenPage() {
                       }}
 
                       animate={{
-                        x: -120,
+                        x: -250 +
+                           index * 90,
 
                         y:
                           eliminatedPlayers.includes(
@@ -763,9 +762,6 @@ export default function ScreenPage() {
                   (
                     player: any,
                   ) =>
-                    !deadPlayers.includes(
-                      player.telegramId,
-                    ) &&
                     playerChoices[
                     player.telegramId
                     ] === 'right',
@@ -773,6 +769,7 @@ export default function ScreenPage() {
                 .map(
                   (
                     player: any,
+                    index: number,
                   ) => (
                     <motion.div
                       key={
@@ -786,7 +783,8 @@ export default function ScreenPage() {
                       }}
 
                       animate={{
-                        x: 120,
+                        x: 250 -
+                           index * 90,
 
                         y:
                           eliminatedPlayers.includes(
