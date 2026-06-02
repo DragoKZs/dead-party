@@ -25,13 +25,6 @@ export function getRoundType(
     return 'final';
   }
 
-  if (
-    alivePlayers.length <= 3 &&
-    alivePlayers.length > 1
-  ) {
-    return 'final';
-  }
-
   // ⚡ SPEED
 
   if (
