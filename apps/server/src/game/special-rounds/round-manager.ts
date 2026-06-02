@@ -26,8 +26,8 @@ export function getRoundType(
   }
 
   if (
-    alivePlayers.length <=
-    3
+    alivePlayers.length <= 3 &&
+    alivePlayers.length > 1
   ) {
     return 'final';
   }
