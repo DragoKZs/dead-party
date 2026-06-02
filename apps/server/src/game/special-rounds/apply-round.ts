@@ -51,6 +51,6 @@ export function applyRound(
         false;
 
       room.timeLeft =
-        10;
+        30;
   }
 }

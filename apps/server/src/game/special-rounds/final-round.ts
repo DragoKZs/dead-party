@@ -13,5 +13,5 @@ export function applyFinalRound(
   room.isFinalRound =
     true;
 
-  room.timeLeft = 5;
+  room.timeLeft = 15;
 }

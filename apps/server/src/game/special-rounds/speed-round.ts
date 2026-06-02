@@ -13,5 +13,5 @@ export function applySpeedRound(
   room.isFinalRound =
     false;
 
-  room.timeLeft = 5;
+  room.timeLeft = 15;
 }

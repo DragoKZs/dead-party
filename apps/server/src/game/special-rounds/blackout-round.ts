@@ -13,5 +13,5 @@ export function applyBlackoutRound(
   room.isFinalRound =
     false;
 
-  room.timeLeft = 10;
+  room.timeLeft = 30;
 }
