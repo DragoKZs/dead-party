@@ -1142,6 +1142,8 @@ export class GameGateway {
   submitSurvivalAnswerEvent(
     @MessageBody()
     data: any,
+    @ConnectedSocket()
+    client: Socket,
   ) {
     const room =
       this.getRoom(
@@ -1150,10 +1152,33 @@ export class GameGateway {
 
     if (!room) return;
 
+    const player =
+      room.players.find(
+        (p: any) =>
+          p.socketId ===
+          client.id,
+      );
+
+    if (!player)
+      return;
+
     submitSurvivalAnswer(
       room,
-      data.telegramId,
+      player.telegramId,
       data.answer,
+    );
+
+    this.server.to(
+      data.roomCode,
+    ).emit(
+      'survivalPlayerMoved',
+      {
+        telegramId:
+          player.telegramId,
+
+        answer:
+          data.answer,
+      },
     );
   }
 
