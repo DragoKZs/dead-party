@@ -284,12 +284,8 @@ export class GameGateway {
 
         const everyoneAnswered =
           room.players.every(
-            (
-              p: any,
-            ) =>
-              p.hasAnswered ||
-              p.lives <=
-              0,
+            (p: any) =>
+              p.hasAnswered,
           );
 
         if (
@@ -322,12 +318,32 @@ export class GameGateway {
               if (
                 correct
               ) {
-                player.score +=
-                  room.isFinalRound
-                    ? 300
-                    : room.isSpeedRound
-                      ? 200
-                      : 100;
+
+                if (
+                  room.isLastChanceRound
+                ) {
+                  if (
+                    player.lives <= 0
+                  ) {
+                    player.lives = 1;
+
+                    player.eliminated =
+                      false;
+                  } else if (
+                    player.lives < 3
+                  ) {
+                    player.lives++;
+                  } else {
+                    player.score += 50;
+                  }
+                } else {
+                  player.score +=
+                    room.isFinalRound
+                      ? 300
+                      : room.isSpeedRound
+                        ? 200
+                        : 100;
+                }
 
                 player.streak++;
 
@@ -341,12 +357,12 @@ export class GameGateway {
               } else {
                 player.streak = 0;
 
-                if (
-                  player.lives >
-                  0
-                ) {
-                  player.lives--;
-                }
+                player.lives =
+                  Math.max(
+                    0,
+                    player.lives - 1,
+                  );
+
               }
             },
           );
