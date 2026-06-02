@@ -8,6 +8,12 @@ import {
 
 import { Server, Socket } from 'socket.io';
 
+import { getRoundType } from './special-rounds/round-manager';
+
+import { applyRound } from './special-rounds/apply-round';
+
+import { forceRound } from './special-rounds/force-round';
+
 import { questions } from '../questions/questions';
 
 const rooms: any = {};
@@ -108,7 +114,7 @@ export class GameGateway {
         const j =
           Math.floor(
             Math.random() *
-              (i + 1),
+            (i + 1),
           );
 
         [arr[i], arr[j]] =
@@ -140,12 +146,12 @@ export class GameGateway {
           if (
             ny > 0 &&
             ny <
-              size - 1 &&
+            size - 1 &&
             nx > 0 &&
             nx <
-              size - 1 &&
+            size - 1 &&
             maze[ny][nx] ===
-              1
+            1
           ) {
             maze[
               y + dy / 2
@@ -198,43 +204,23 @@ export class GameGateway {
 
     room.paused = false;
 
-    room.isSpeedRound =
-      room.forceSpeedRound;
+    const roundType =
+      getRoundType(
+        room,
+      );
 
-    room.isBlackoutRound =
-      room.forceBlackoutRound;
+    applyRound(
+      room,
+      roundType,
+    );
 
-    room.isLastChanceRound =
-      room.forceLastChanceRound;
-
-    room.isFinalRound =
-      room.forceFinalRound;
-
-    room.forceSpeedRound =
-      false;
-
-    room.forceBlackoutRound =
-      false;
-
-    room.forceLastChanceRound =
-      false;
-
-    room.forceFinalRound =
-      false;
-
-    room.timeLeft =
-      room.isFinalRound
-        ? 8
-        : room.isSpeedRound
-        ? 5
-        : 10;
 
     const randomQuestion =
       questions[
-        Math.floor(
-          Math.random() *
-            questions.length,
-        )
+      Math.floor(
+        Math.random() *
+        questions.length,
+      )
       ];
 
     room.currentQuestion =
@@ -303,7 +289,7 @@ export class GameGateway {
             ) =>
               p.hasAnswered ||
               p.lives <=
-                0,
+              0,
           );
 
         if (
@@ -340,8 +326,8 @@ export class GameGateway {
                   room.isFinalRound
                     ? 300
                     : room.isSpeedRound
-                    ? 200
-                    : 100;
+                      ? 200
+                      : 100;
 
                 player.streak++;
 
@@ -416,7 +402,7 @@ export class GameGateway {
     const delay =
       Math.floor(
         Math.random() *
-          4000,
+        4000,
       ) + 2000;
 
     setTimeout(() => {
@@ -539,8 +525,8 @@ export class GameGateway {
               const mazePlayer =
                 room
                   .mazePlayers[
-                  player
-                    .telegramId
+                player
+                  .telegramId
                 ];
 
               if (
@@ -714,10 +700,10 @@ export class GameGateway {
 
     const randomEmoji =
       emojiAvatars[
-        Math.floor(
-          Math.random() *
-            emojiAvatars.length,
-        )
+      Math.floor(
+        Math.random() *
+        emojiAvatars.length,
+      )
       ];
 
     room.players.push({
@@ -817,6 +803,102 @@ export class GameGateway {
   }
 
   @SubscribeMessage(
+    'forceSpeedRound',
+  )
+  forceSpeedRoundEvent(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      this.getRoom(
+        data.roomCode,
+      );
+
+    if (!room) return;
+
+    forceRound(
+      room,
+      'speed',
+    );
+
+    this.startQuestion(
+      data.roomCode,
+    );
+  }
+
+  @SubscribeMessage(
+    'forceBlackoutRound',
+  )
+  forceBlackoutRoundEvent(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      this.getRoom(
+        data.roomCode,
+      );
+
+    if (!room) return;
+
+    forceRound(
+      room,
+      'blackout',
+    );
+
+    this.startQuestion(
+      data.roomCode,
+    );
+  }
+
+  @SubscribeMessage(
+    'forceLastChanceRound',
+  )
+  forceLastChanceRoundEvent(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      this.getRoom(
+        data.roomCode,
+      );
+
+    if (!room) return;
+
+    forceRound(
+      room,
+      'last-chance',
+    );
+
+    this.startQuestion(
+      data.roomCode,
+    );
+  }
+
+  @SubscribeMessage(
+    'forceFinalRound',
+  )
+  forceFinalRoundEvent(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      this.getRoom(
+        data.roomCode,
+      );
+
+    if (!room) return;
+
+    forceRound(
+      room,
+      'final',
+    );
+
+    this.startQuestion(
+      data.roomCode,
+    );
+  }
+
+  @SubscribeMessage(
     'reactionClick',
   )
   reactionClick(
@@ -892,7 +974,7 @@ export class GameGateway {
     this.startMazeGame(
       data.roomCode,
       data.difficulty ||
-        'normal',
+      'normal',
     );
   }
 
@@ -928,7 +1010,7 @@ export class GameGateway {
 
     const mazePlayer =
       room.mazePlayers[
-        player.telegramId
+      player.telegramId
       ];
 
     let nx = mazePlayer.x;
