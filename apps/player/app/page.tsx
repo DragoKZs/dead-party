@@ -280,6 +280,15 @@ export default function Home() {
     );
 
     socket.on(
+      'playersUpdated',
+      (data) => {
+        setPlayers(
+          data.players,
+        );
+      },
+    );
+
+    socket.on(
       'timerUpdate',
       (data) => {
         setTimeLeft(
@@ -467,6 +476,10 @@ export default function Home() {
     return () => {
       socket.off(
         'questionStarted',
+      );
+
+      socket.off(
+        'playersUpdated',
       );
 
       socket.off(
@@ -998,7 +1011,7 @@ export default function Home() {
               </div>
             </div>
 
-            {isHolder && (
+            {isHolder ? (
               <div className="grid gap-4">
                 {players
                   ?.filter(
@@ -1009,7 +1022,7 @@ export default function Home() {
                       telegramId &&
                       player.telegramId !==
                       bombHolder
-                        ?.telegramId
+                        ?.telegramId,
                   )
                   .slice(0, 6)
                   .map(
@@ -1063,6 +1076,10 @@ export default function Home() {
                       </button>
                     ),
                   )}
+              </div>
+            ) : (
+              <div className="mt-10 text-center text-4xl font-black text-gray-400">
+                У КОГО-ТО 💣
               </div>
             )}
           </>
