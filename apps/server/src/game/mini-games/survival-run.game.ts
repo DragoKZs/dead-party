@@ -71,10 +71,10 @@ export function startSurvivalRun(
 
   const question =
     survivalQuestions[
-      Math.floor(
-        Math.random() *
-          survivalQuestions.length,
-      )
+    Math.floor(
+      Math.random() *
+      survivalQuestions.length,
+    )
     ];
 
   room.currentSurvivalQuestion =
@@ -88,6 +88,20 @@ export function submitSurvivalAnswer(
   telegramId: string,
   answer: string,
 ) {
+  const player =
+    room.survivalPlayers.find(
+      (p: any) =>
+        p.telegramId ===
+        telegramId,
+    );
+
+  if (
+    !player ||
+    !player.alive
+  ) {
+    return;
+  }
+
   room.survivalAnswers[
     telegramId
   ] = answer;
@@ -112,7 +126,7 @@ export function finishSurvivalRound(
       const answer =
         room
           .survivalAnswers[
-          player.telegramId
+        player.telegramId
         ];
 
       if (
@@ -174,10 +188,10 @@ export function finishSurvivalRound(
 
   const question =
     survivalQuestions[
-      Math.floor(
-        Math.random() *
-          survivalQuestions.length,
-      )
+    Math.floor(
+      Math.random() *
+      survivalQuestions.length,
+    )
     ];
 
   room.currentSurvivalQuestion =
