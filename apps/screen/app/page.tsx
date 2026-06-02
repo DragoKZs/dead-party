@@ -333,6 +333,10 @@ export default function ScreenPage() {
           data.question,
         );
 
+        setPlayerChoices(
+          {},
+        );
+
         setSurvivalRound(
           data.round,
         );
@@ -628,6 +632,9 @@ export default function ScreenPage() {
                   (
                     player: any,
                   ) =>
+                    !eliminatedPlayers.includes(
+                      player.telegramId,
+                    ) &&
                     playerChoices[
                     player.telegramId
                     ] === 'left',
@@ -697,6 +704,9 @@ export default function ScreenPage() {
                   (
                     player: any,
                   ) =>
+                    !eliminatedPlayers.includes(
+                      player.telegramId,
+                    ) &&
                     playerChoices[
                     player.telegramId
                     ] === 'right',

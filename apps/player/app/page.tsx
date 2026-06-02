@@ -186,6 +186,11 @@ export default function Home() {
     'alive' | 'dead' | null
   >(null);
 
+  const [
+    survivalDead,
+    setSurvivalDead,
+  ] = useState(false);
+
   const randomEmoji =
     useMemo(() => {
       return emojiAvatars[
@@ -533,6 +538,12 @@ export default function Home() {
               telegramId,
           );
 
+        if (!alive) {
+          setSurvivalDead(
+            true,
+          );
+        }
+
         setSurvivalResult(
           alive
             ? 'alive'
@@ -540,6 +551,9 @@ export default function Home() {
         );
 
         setTimeout(() => {
+          if (!alive)
+            return;
+
           setSurvivalQuestion(
             data.question,
           );
@@ -1207,7 +1221,17 @@ export default function Home() {
           } / 5
         </div>
 
-        {survivalResult ? (
+        {survivalDead ? (
+          <div className="flex flex-col items-center">
+            <div className="mb-8 text-[140px]">
+              💀
+            </div>
+
+            <div className="text-6xl font-black text-red-500">
+              ТЫ ПРОИГРАЛ
+            </div>
+          </div>
+        ) : survivalResult ? (
           <div className="flex flex-col items-center">
             <div className="mb-8 text-[120px]">
               {survivalResult ===
