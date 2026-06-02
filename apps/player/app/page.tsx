@@ -71,6 +71,11 @@ export default function Home() {
   const [question, setQuestion] =
     useState<any>(null);
 
+  const [
+    blackoutHidden,
+    setBlackoutHidden,
+  ] = useState(false);
+
   const [timeLeft, setTimeLeft] =
     useState(0);
 
@@ -132,7 +137,7 @@ export default function Home() {
       return emojiAvatars[
         Math.floor(
           Math.random() *
-            emojiAvatars.length,
+          emojiAvatars.length,
         )
       ];
     }, []);
@@ -214,6 +219,22 @@ export default function Home() {
         setMode('quiz');
 
         setQuestion(data);
+
+        setBlackoutHidden(
+          false,
+        );
+
+
+        if (
+          data.isBlackoutRound
+        ) {
+          setTimeout(() => {
+            setBlackoutHidden(
+              true,
+            );
+          }, 3000);
+        }
+
 
         setQuestionEnded(false);
 
@@ -524,10 +545,10 @@ export default function Home() {
     () => {
       const random =
         emojiAvatars[
-          Math.floor(
-            Math.random() *
-              emojiAvatars.length,
-          )
+        Math.floor(
+          Math.random() *
+          emojiAvatars.length,
+        )
         ];
 
       setAvatar(random);
@@ -555,9 +576,9 @@ export default function Home() {
           {avatar?.startsWith(
             'data:image',
           ) ||
-          avatar?.startsWith(
-            'http',
-          ) ? (
+            avatar?.startsWith(
+              'http',
+            ) ? (
             <img
               src={avatar}
               alt="avatar"
@@ -685,7 +706,7 @@ export default function Home() {
 
   if (
     mode ===
-      'reaction-finished' &&
+    'reaction-finished' &&
     reactionWinner
   ) {
     return (
@@ -760,22 +781,21 @@ export default function Home() {
                     ) => {
                       const isPlayer =
                         mazePosition.x ===
-                          x &&
+                        x &&
                         mazePosition.y ===
-                          y;
+                        y;
 
                       return (
                         <div
                           key={`${x}-${y}`}
                           className={`flex h-6 w-6 items-center justify-center rounded-sm text-xs
-                          ${
-                            cell === 1
+                          ${cell === 1
                               ? 'bg-red-950'
                               : cell ===
                                 2
-                              ? 'bg-pink-500'
-                              : 'bg-gray-800'
-                          }`}
+                                ? 'bg-pink-500'
+                                : 'bg-gray-800'
+                            }`}
                         >
                           {cell ===
                             2 &&
@@ -880,14 +900,21 @@ export default function Home() {
                       index,
                     )
                   }
-                  className={`min-h-[90px] rounded-3xl p-6 text-2xl font-black
-                  ${
-                    questionEnded &&
-                    correctAnswer ===
+                  className={`rounded-3xl p-6 text-center text-2xl font-black transition-all duration-500
+
+                      ${blackoutHidden
+                      ? 'blur-md brightness-50'
+                      : ''
+                    }
+
+                      ${questionEnded &&
+                      correctAnswer ===
                       index
                       ? 'bg-green-600'
-                      : 'bg-red-600'
-                  }`}
+                      : locked
+                        ? 'bg-gray-700'
+                        : 'bg-red-600 active:scale-[0.98]'
+                    }`}
                 >
                   {answer}
                 </button>
