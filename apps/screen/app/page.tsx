@@ -128,6 +128,13 @@ export default function ScreenPage() {
   );
 
   const [
+    deadPlayers,
+    setDeadPlayers,
+  ] = useState<string[]>(
+    [],
+  );
+
+  const [
     playerChoices,
     setPlayerChoices,
   ] = useState<
@@ -357,6 +364,13 @@ export default function ScreenPage() {
         setTimeout(() => {
           setSurvivalQuestion(
             data.question,
+          );
+
+          setDeadPlayers(
+            (prev) => [
+              ...prev,
+              ...data.eliminated,
+            ],
           );
 
           setSurvivalRound(
@@ -632,7 +646,7 @@ export default function ScreenPage() {
                   (
                     player: any,
                   ) =>
-                    !eliminatedPlayers.includes(
+                    !deadPlayers.includes(
                       player.telegramId,
                     ) &&
                     playerChoices[
@@ -704,7 +718,7 @@ export default function ScreenPage() {
                   (
                     player: any,
                   ) =>
-                    !eliminatedPlayers.includes(
+                    !deadPlayers.includes(
                       player.telegramId,
                     ) &&
                     playerChoices[
