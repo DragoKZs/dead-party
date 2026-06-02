@@ -191,6 +191,11 @@ export default function Home() {
     setSurvivalDead,
   ] = useState(false);
 
+  const [
+    survivalTimer,
+    setSurvivalTimer,
+  ] = useState(10);
+
   const randomEmoji =
     useMemo(() => {
       return emojiAvatars[
@@ -200,6 +205,48 @@ export default function Home() {
         )
       ];
     }, []);
+
+  useEffect(() => {
+    if (
+      mode !==
+      'survival-run' ||
+      survivalDead
+    ) {
+      return;
+    }
+
+    const interval =
+      setInterval(() => {
+        setSurvivalTimer(
+          (
+            prev,
+          ) => {
+            if (
+              prev <= 1
+            ) {
+              clearInterval(
+                interval,
+              );
+
+              return 0;
+            }
+
+            return (
+              prev - 1
+            );
+          },
+        );
+      }, 1000);
+
+    return () =>
+      clearInterval(
+        interval,
+      );
+  }, [
+    mode,
+    survivalRound,
+    survivalDead,
+  ]);
 
   useEffect(() => {
     try {
@@ -522,8 +569,16 @@ export default function Home() {
           false,
         );
 
+        setSurvivalTimer(
+          10,
+        );
+
         setSurvivalResult(
           null,
+        );
+
+        setSurvivalTimer(
+          10,
         );
       },
     );
@@ -1216,6 +1271,17 @@ export default function Home() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
         <div className="mb-6 text-5xl font-black text-yellow-400">
+          <div
+            className={`text-7xl font-black
+                ${survivalTimer <= 3
+                ? 'animate-pulse text-red-500'
+                : 'text-white'
+              }`}
+          >
+            ⏳ {
+              survivalTimer
+            }
+          </div>
           РАУНД {
             survivalRound
           } / 5

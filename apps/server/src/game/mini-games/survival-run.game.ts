@@ -130,6 +130,7 @@ export function finishSurvivalRound(
         ];
 
       if (
+        !answer ||
         answer !== correct
       ) {
         player.alive =

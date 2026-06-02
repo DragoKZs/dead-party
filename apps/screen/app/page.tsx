@@ -139,6 +139,13 @@ export default function ScreenPage() {
   );
 
   const [
+    survivalWinners,
+    setSurvivalWinners,
+  ] = useState<any[]>(
+    [],
+  );
+
+  const [
     playerChoices,
     setPlayerChoices,
   ] = useState<
@@ -396,10 +403,14 @@ export default function ScreenPage() {
 
     socket.on(
       'survivalRunFinished',
-      () => {
+      (data) => {
+        setSurvivalWinners(
+          data.winners,
+        );
+
         setTimeout(() => {
           setMode('idle');
-        }, 5000);
+        }, 7000);
       },
     );
 
@@ -641,220 +652,292 @@ export default function ScreenPage() {
           }
         </div>
 
-        <div className="grid flex-1 grid-cols-2 gap-8">
-          <div className="flex flex-col items-center rounded-[40px] border-8 border-blue-500 bg-blue-950 p-8">
-            <div className="mb-8 text-6xl font-black">
-              {
-                survivalQuestion?.left
-              }
+        {survivalWinners.length >
+          0 ? (
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <div className="mb-8 animate-bounce text-[160px]">
+              👑
             </div>
 
-            <div className="flex flex-wrap justify-center gap-8">
+            <div className="mb-10 text-7xl font-black text-yellow-400">
+              ПОБЕДИТЕЛЬ
+            </div>
 
-              {players
-                .filter(
-                  (
-                    player: any,
-                  ) =>
-                    playerChoices[
-                    player.telegramId
-                    ] === 'left',
-                )
-                .map(
-                  (
-                    player: any,
-                    index: number,
-                  ) => (
-                    <motion.div
-                      key={
-                        player.telegramId
-                      }
-
-                      initial={{
-                        x: 0,
-                        y: 0,
-                        scale: 0.7,
-                      }}
-
-                      animate={{
-                        x: -250 +
-                           index * 90,
-
-                        y:
-                          eliminatedPlayers.includes(
-                            player.telegramId,
-                          )
-                            ? 500
-                            : 0,
-
-                        opacity:
-                          eliminatedPlayers.includes(
-                            player.telegramId,
-                          )
-                            ? 0
-                            : 1,
-
-                        rotate:
-                          eliminatedPlayers.includes(
-                            player.telegramId,
-                          )
-                            ? 90
-                            : 0,
-                      }}
-
-                      transition={{
-                        duration: 0.8,
-                      }}
-                      className={`flex flex-col items-center transition-all duration-700
-                  ${eliminatedPlayers.includes(
-                        player.telegramId,
-                      )
-                          ? 'translate-y-96 opacity-0'
-                          : ''
-                        }`}
-                    >
-                      {player.avatar?.startsWith(
-                        'http',
-                      ) ||
-                        player.avatar?.startsWith(
-                          'data:image',
-                        ) ? (
-                        <img
-                          src={
-                            player.avatar
-                          }
-                          alt="avatar"
-                          className="h-24 w-24 rounded-full border-4 border-white object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-black text-5xl">
-                          {
-                            player.avatar
-                          }
-                        </div>
-                      )}
-
-                      <div className="mt-3 text-2xl font-black">
+            <div className="flex flex-wrap justify-center gap-12">
+              {survivalWinners.map(
+                (
+                  player: any,
+                ) => (
+                  <div
+                    key={
+                      player.telegramId
+                    }
+                    className="flex flex-col items-center"
+                  >
+                    {player.avatar?.startsWith(
+                      'http',
+                    ) ||
+                      player.avatar?.startsWith(
+                        'data:image',
+                      ) ? (
+                      <img
+                        src={
+                          player.avatar
+                        }
+                        alt="avatar"
+                        className="h-40 w-40 rounded-full border-8 border-yellow-400 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-40 w-40 items-center justify-center rounded-full border-8 border-yellow-400 bg-black text-8xl">
                         {
-                          player.name
+                          player.avatar
                         }
                       </div>
+                    )}
 
-                      <div className="mt-2 text-6xl">
-                        🧍
-                      </div>
-                    </motion.div>
-                  ),
-                )}
+                    <div className="mt-5 text-5xl font-black">
+                      {
+                        player.name
+                      }
+                    </div>
+
+                    <div className="mt-3 text-3xl text-yellow-400">
+                      +400
+                    </div>
+                  </div>
+                ),
+              )}
             </div>
           </div>
+        ) : (
 
-          <div className="flex flex-col items-center rounded-[40px] border-8 border-red-500 bg-red-950 p-8">
-            <div className="mb-8 text-6xl font-black">
-              {
-                survivalQuestion?.right
-              }
-            </div>
+          <div className="grid flex-1 grid-cols-2 gap-8">
+            <div className="flex flex-col items-center rounded-[40px] border-8 border-blue-500 bg-blue-950 p-8">
+              <div className="mb-8 text-6xl font-black">
+                {
+                  survivalQuestion?.left
+                }
+              </div>
 
-            <div className="flex flex-wrap justify-center gap-8">
-              {players
-                .filter(
-                  (
-                    player: any,
-                  ) =>
-                    playerChoices[
-                    player.telegramId
-                    ] === 'right',
-                )
-                .map(
-                  (
-                    player: any,
-                    index: number,
-                  ) => (
-                    <motion.div
-                      key={
-                        player.telegramId
-                      }
+              <div className="flex flex-wrap justify-center gap-8">
 
-                      initial={{
-                        x: 0,
-                        y: 0,
-                        scale: 0.7,
-                      }}
+                {players
+                  .filter(
+                    (
+                      player: any,
+                    ) =>
+                      playerChoices[
+                      player.telegramId
+                      ] === 'left',
+                  )
+                  .map(
+                    (
+                      player: any,
+                      index: number,
+                    ) => (
+                      <motion.div
+                        key={
+                          player.telegramId
+                        }
 
-                      animate={{
-                        x: 250 -
-                           index * 90,
+                        initial={{
+                          x: 0,
+                          y: 0,
+                          scale: 0.7,
+                        }}
 
-                        y:
-                          eliminatedPlayers.includes(
-                            player.telegramId,
-                          )
-                            ? 500
-                            : 0,
+                        animate={{
+                          x: -250 +
+                            index * 90,
 
-                        opacity:
-                          eliminatedPlayers.includes(
-                            player.telegramId,
-                          )
-                            ? 0
-                            : 1,
+                          y:
+                            eliminatedPlayers.includes(
+                              player.telegramId,
+                            )
+                              ? 500
+                              : 0,
 
-                        rotate:
-                          eliminatedPlayers.includes(
-                            player.telegramId,
-                          )
-                            ? 90
-                            : 0,
-                      }}
+                          opacity:
+                            eliminatedPlayers.includes(
+                              player.telegramId,
+                            )
+                              ? 0
+                              : 1,
 
-                      transition={{
-                        duration: 0.8,
-                      }}
-                      className={`flex flex-col items-center transition-all duration-700
+                          rotate:
+                            eliminatedPlayers.includes(
+                              player.telegramId,
+                            )
+                              ? 90
+                              : 0,
+                        }}
+
+                        transition={{
+                          duration: 0.8,
+                        }}
+                        className={`flex flex-col items-center transition-all duration-700
                   ${eliminatedPlayers.includes(
-                        player.telegramId,
-                      )
-                          ? 'translate-y-96 opacity-0'
-                          : ''
-                        }`}
-                    >
-                      {player.avatar?.startsWith(
-                        'http',
-                      ) ||
-                        player.avatar?.startsWith(
-                          'data:image',
-                        ) ? (
-                        <img
-                          src={
-                            player.avatar
-                          }
-                          alt="avatar"
-                          className="h-24 w-24 rounded-full border-4 border-white object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-black text-5xl">
+                          player.telegramId,
+                        )
+                            ? 'translate-y-96 opacity-0'
+                            : ''
+                          }`}
+                      >
+                        {player.avatar?.startsWith(
+                          'http',
+                        ) ||
+                          player.avatar?.startsWith(
+                            'data:image',
+                          ) ? (
+                          <img
+                            src={
+                              player.avatar
+                            }
+                            alt="avatar"
+                            className="h-24 w-24 rounded-full border-4 border-white object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-black text-5xl">
+                            {
+                              player.avatar
+                            }
+                          </div>
+                        )}
+
+                        <div className="mt-3 text-2xl font-black">
                           {
-                            player.avatar
+                            player.name
                           }
                         </div>
-                      )}
+                        <div className="relative mt-4 flex flex-col items-center">
+                          <div className="h-10 w-2 rounded-full bg-white" />
 
-                      <div className="mt-3 text-2xl font-black">
-                        {
-                          player.name
+                          <div className="mt-[-2px] flex gap-3">
+                            <div className="h-10 w-2 rotate-12 rounded-full bg-white" />
+
+                            <div className="h-10 w-2 -rotate-12 rounded-full bg-white" />
+                          </div>
+
+                          <div className="mt-[-22px] flex gap-6">
+                            <div className="h-8 w-2 rotate-45 rounded-full bg-white" />
+
+                            <div className="h-8 w-2 -rotate-45 rounded-full bg-white" />
+                          </div>
+                        </div>
+                      </motion.div>
+                    ),
+                  )}
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center rounded-[40px] border-8 border-red-500 bg-red-950 p-8">
+              <div className="mb-8 text-6xl font-black">
+                {
+                  survivalQuestion?.right
+                }
+              </div>
+
+              <div className="flex flex-wrap justify-center gap-8">
+                {players
+                  .filter(
+                    (
+                      player: any,
+                    ) =>
+                      playerChoices[
+                      player.telegramId
+                      ] === 'right',
+                  )
+                  .map(
+                    (
+                      player: any,
+                      index: number,
+                    ) => (
+                      <motion.div
+                        key={
+                          player.telegramId
                         }
-                      </div>
 
-                      <div className="mt-2 text-6xl">
-                        🧍
-                      </div>
-                    </motion.div>
-                  ),
-                )}
+                        initial={{
+                          x: 0,
+                          y: 0,
+                          scale: 0.7,
+                        }}
+
+                        animate={{
+                          x: 250 -
+                            index * 90,
+
+                          y:
+                            eliminatedPlayers.includes(
+                              player.telegramId,
+                            )
+                              ? 500
+                              : 0,
+
+                          opacity:
+                            eliminatedPlayers.includes(
+                              player.telegramId,
+                            )
+                              ? 0
+                              : 1,
+
+                          rotate:
+                            eliminatedPlayers.includes(
+                              player.telegramId,
+                            )
+                              ? 90
+                              : 0,
+                        }}
+
+                        transition={{
+                          duration: 0.8,
+                        }}
+                        className={`flex flex-col items-center transition-all duration-700
+                  ${eliminatedPlayers.includes(
+                          player.telegramId,
+                        )
+                            ? 'translate-y-96 opacity-0'
+                            : ''
+                          }`}
+                      >
+                        {player.avatar?.startsWith(
+                          'http',
+                        ) ||
+                          player.avatar?.startsWith(
+                            'data:image',
+                          ) ? (
+                          <img
+                            src={
+                              player.avatar
+                            }
+                            alt="avatar"
+                            className="h-24 w-24 rounded-full border-4 border-white object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-black text-5xl">
+                            {
+                              player.avatar
+                            }
+                          </div>
+                        )}
+
+                        <div className="mt-3 text-2xl font-black">
+                          {
+                            player.name
+                          }
+                        </div>
+
+                        <div className="mt-2 text-6xl">
+                          🧍
+                        </div>
+                      </motion.div>
+                    ),
+                  )}
+              </div>
             </div>
           </div>
-        </div>
+        )
+      }
       </main>
     );
   }
