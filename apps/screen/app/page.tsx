@@ -8,6 +8,10 @@ import {
 
 import { io } from 'socket.io-client';
 
+import {
+  motion,
+} from 'framer-motion';
+
 const socket = io(
   'https://dead-party-server.onrender.com',
   {
@@ -663,10 +667,45 @@ export default function ScreenPage() {
                   (
                     player: any,
                   ) => (
-                    <div
+                    <motion.div
                       key={
                         player.telegramId
                       }
+
+                      initial={{
+                        x: 0,
+                        y: 0,
+                        scale: 0.7,
+                      }}
+
+                      animate={{
+                        x: -120,
+
+                        y:
+                          eliminatedPlayers.includes(
+                            player.telegramId,
+                          )
+                            ? 500
+                            : 0,
+
+                        opacity:
+                          eliminatedPlayers.includes(
+                            player.telegramId,
+                          )
+                            ? 0
+                            : 1,
+
+                        rotate:
+                          eliminatedPlayers.includes(
+                            player.telegramId,
+                          )
+                            ? 90
+                            : 0,
+                      }}
+
+                      transition={{
+                        duration: 0.8,
+                      }}
                       className={`flex flex-col items-center transition-all duration-700
                   ${eliminatedPlayers.includes(
                         player.telegramId,
@@ -705,7 +744,7 @@ export default function ScreenPage() {
                       <div className="mt-2 text-6xl">
                         🧍
                       </div>
-                    </div>
+                    </motion.div>
                   ),
                 )}
             </div>
@@ -735,10 +774,45 @@ export default function ScreenPage() {
                   (
                     player: any,
                   ) => (
-                    <div
+                    <motion.div
                       key={
                         player.telegramId
                       }
+
+                      initial={{
+                        x: 0,
+                        y: 0,
+                        scale: 0.7,
+                      }}
+
+                      animate={{
+                        x: 120,
+
+                        y:
+                          eliminatedPlayers.includes(
+                            player.telegramId,
+                          )
+                            ? 500
+                            : 0,
+
+                        opacity:
+                          eliminatedPlayers.includes(
+                            player.telegramId,
+                          )
+                            ? 0
+                            : 1,
+
+                        rotate:
+                          eliminatedPlayers.includes(
+                            player.telegramId,
+                          )
+                            ? 90
+                            : 0,
+                      }}
+
+                      transition={{
+                        duration: 0.8,
+                      }}
                       className={`flex flex-col items-center transition-all duration-700
                   ${eliminatedPlayers.includes(
                         player.telegramId,
@@ -777,7 +851,7 @@ export default function ScreenPage() {
                       <div className="mt-2 text-6xl">
                         🧍
                       </div>
-                    </div>
+                    </motion.div>
                   ),
                 )}
             </div>
