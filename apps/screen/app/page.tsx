@@ -776,7 +776,7 @@ export default function ScreenPage() {
                           duration: 0.8,
                         }}
                         className={`flex flex-col items-center transition-all duration-700
-                  ${eliminatedPlayers.includes(
+                        ${eliminatedPlayers.includes(
                           player.telegramId,
                         )
                             ? 'translate-y-96 opacity-0'
@@ -926,9 +926,20 @@ export default function ScreenPage() {
                             player.name
                           }
                         </div>
+                        <div className="relative mt-4 flex flex-col items-center">
+                          <div className="h-10 w-2 rounded-full bg-white" />
 
-                        <div className="mt-2 text-6xl">
-                          🧍
+                          <div className="mt-[-2px] flex gap-3">
+                            <div className="h-10 w-2 rotate-12 rounded-full bg-white" />
+
+                            <div className="h-10 w-2 -rotate-12 rounded-full bg-white" />
+                          </div>
+
+                          <div className="mt-[-22px] flex gap-6">
+                            <div className="h-8 w-2 rotate-45 rounded-full bg-white" />
+
+                            <div className="h-8 w-2 -rotate-45 rounded-full bg-white" />
+                          </div>
                         </div>
                       </motion.div>
                     ),
@@ -937,7 +948,7 @@ export default function ScreenPage() {
             </div>
           </div>
         )
-      }
+        }
       </main>
     );
   }
