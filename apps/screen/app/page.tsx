@@ -809,19 +809,39 @@ export default function ScreenPage() {
                             player.name
                           }
                         </div>
-                        <div className="relative mt-4 flex flex-col items-center">
-                          <div className="h-10 w-2 rounded-full bg-white" />
+                        <div className="relative mt-6 flex flex-col items-center">
 
-                          <div className="mt-[-2px] flex gap-3">
-                            <div className="h-10 w-2 rotate-12 rounded-full bg-white" />
+                          <div className="absolute top-[115px] h-6 w-20 rounded-full bg-black/40 blur-md" />
 
-                            <div className="h-10 w-2 -rotate-12 rounded-full bg-white" />
-                          </div>
+                          <div className="relative z-10 flex flex-col items-center">
 
-                          <div className="mt-[-22px] flex gap-6">
-                            <div className="h-8 w-2 rotate-45 rounded-full bg-white" />
+                            <div className="h-20 w-16 rounded-t-[30px] rounded-b-[20px] bg-gradient-to-b from-red-400 to-red-700" />
 
-                            <div className="h-8 w-2 -rotate-45 rounded-full bg-white" />
+                            <div className="mt-[-6px] flex gap-7">
+                              <div
+                                className={`h-16 w-3 rounded-full bg-white
+                                  ${playerChoices[
+                                    player.telegramId
+                                  ]
+                                    ? 'animate-bounce'
+                                    : ''
+                                  }`}
+                              />
+
+                              <div
+                                className={`h-16 w-3 rounded-full bg-white
+                                  ${playerChoices[
+                                    player.telegramId
+                                  ]
+                                    ? 'animate-bounce'
+                                    : ''
+                                  }`}
+                              />
+                            </div>
+
+                            <div className="absolute top-[20px] left-[-18px] h-12 w-3 rotate-45 rounded-full bg-white" />
+
+                            <div className="absolute top-[20px] right-[-18px] h-12 w-3 -rotate-45 rounded-full bg-white" />
                           </div>
                         </div>
                       </motion.div>
@@ -926,19 +946,39 @@ export default function ScreenPage() {
                             player.name
                           }
                         </div>
-                        <div className="relative mt-4 flex flex-col items-center">
-                          <div className="h-10 w-2 rounded-full bg-white" />
+                        <div className="relative mt-6 flex flex-col items-center">
 
-                          <div className="mt-[-2px] flex gap-3">
-                            <div className="h-10 w-2 rotate-12 rounded-full bg-white" />
+                          <div className="absolute top-[115px] h-6 w-20 rounded-full bg-black/40 blur-md" />
 
-                            <div className="h-10 w-2 -rotate-12 rounded-full bg-white" />
-                          </div>
+                          <div className="relative z-10 flex flex-col items-center">
 
-                          <div className="mt-[-22px] flex gap-6">
-                            <div className="h-8 w-2 rotate-45 rounded-full bg-white" />
+                            <div className="h-20 w-16 rounded-t-[30px] rounded-b-[20px] bg-gradient-to-b from-red-400 to-red-700" />
 
-                            <div className="h-8 w-2 -rotate-45 rounded-full bg-white" />
+                            <div className="mt-[-6px] flex gap-7">
+                              <div
+                                className={`h-16 w-3 rounded-full bg-white
+                                  ${playerChoices[
+                                    player.telegramId
+                                  ]
+                                    ? 'animate-bounce'
+                                    : ''
+                                  }`}
+                              />
+
+                              <div
+                                className={`h-16 w-3 rounded-full bg-white
+                                  ${playerChoices[
+                                    player.telegramId
+                                  ]
+                                    ? 'animate-bounce'
+                                    : ''
+                                  }`}
+                              />
+                            </div>
+
+                            <div className="absolute top-[20px] left-[-18px] h-12 w-3 rotate-45 rounded-full bg-white" />
+
+                            <div className="absolute top-[20px] right-[-18px] h-12 w-3 -rotate-45 rounded-full bg-white" />
                           </div>
                         </div>
                       </motion.div>
