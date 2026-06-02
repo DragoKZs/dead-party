@@ -809,9 +809,10 @@ export default function ScreenPage() {
                             player.name
                           }
                         </div>
-                        <div className="relative mt-6 flex flex-col items-center">
 
-                          <div className="absolute top-[115px] h-6 w-20 rounded-full bg-black/40 blur-md" />
+                        <div className="relative mt-6 flex h-[180px] w-[120px] flex-col items-center justify-start">
+
+                          <div className="absolute bottom-0 h-6 w-20 rounded-full bg-black/40 blur-md" />
 
                           <div className="relative z-10 flex flex-col items-center">
 
@@ -946,9 +947,10 @@ export default function ScreenPage() {
                             player.name
                           }
                         </div>
-                        <div className="relative mt-6 flex flex-col items-center">
 
-                          <div className="absolute top-[115px] h-6 w-20 rounded-full bg-black/40 blur-md" />
+                        <div className="relative mt-6 flex h-[180px] w-[120px] flex-col items-center justify-start">
+
+                          <div className="absolute bottom-0 h-6 w-20 rounded-full bg-black/40 blur-md" />
 
                           <div className="relative z-10 flex flex-col items-center">
 
