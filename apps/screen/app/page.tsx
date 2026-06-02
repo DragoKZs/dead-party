@@ -21,7 +21,8 @@ type ScreenMode =
   | 'reaction-wait'
   | 'reaction-active'
   | 'reaction-finished'
-  | 'maze';
+  | 'maze'
+  | 'bomb-pass';
 
 export default function ScreenPage() {
   const [mode, setMode] =
@@ -84,6 +85,20 @@ export default function ScreenPage() {
     failed: 0,
     total: 0,
   });
+
+  const [
+    bombHolder,
+    setBombHolder,
+  ] = useState<any>(
+    null,
+  );
+
+  const [
+    explodedPlayer,
+    setExplodedPlayer,
+  ] = useState<any>(
+    null,
+  );
 
   useEffect(() => {
     socket.on(
@@ -231,6 +246,45 @@ export default function ScreenPage() {
       },
     );
 
+    socket.on(
+      'bombPassStarted',
+      (data) => {
+        setMode(
+          'bomb-pass',
+        );
+
+        setBombHolder(
+          data.holder,
+        );
+      },
+    );
+
+    socket.on(
+      'bombPassed',
+      (data) => {
+        setBombHolder(
+          data.holder,
+        );
+      },
+    );
+
+    socket.on(
+      'bombExploded',
+      (data) => {
+        setExplodedPlayer(
+          data.player,
+        );
+
+        setTimeout(() => {
+          setMode('idle');
+
+          setExplodedPlayer(
+            null,
+          );
+        }, 4000);
+      },
+    );
+
     return () => {
       socket.off(
         'playersUpdated',
@@ -278,6 +332,18 @@ export default function ScreenPage() {
 
       socket.off(
         'mazeEnded',
+      );
+
+      socket.off(
+        'bombPassStarted',
+      );
+
+      socket.off(
+        'bombPassed',
+      );
+
+      socket.off(
+        'bombExploded',
       );
     };
   }, []);
@@ -345,6 +411,65 @@ export default function ScreenPage() {
 
   if (
     mode ===
+    'bomb-pass'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black text-white">
+        {explodedPlayer ? (
+          <>
+            <div className="mb-10 animate-bounce text-[220px]">
+              💥
+            </div>
+
+            <div className="mb-6 text-[100px] font-black text-red-500">
+              БОМБА
+              ВЗОРВАЛАСЬ
+            </div>
+
+            <div className="text-[80px] font-black">
+              {
+                explodedPlayer.name
+              }
+            </div>
+          </>
+        ) : (
+          <>
+            {bombHolder
+              ?.avatar?.startsWith(
+                'http',
+              ) ? (
+              <img
+                src={
+                  bombHolder.avatar
+                }
+                alt="avatar"
+                className="mb-10 h-72 w-72 rounded-full border-[10px] border-red-500 object-cover shadow-[0_0_100px_rgba(255,0,0,0.9)]"
+              />
+            ) : (
+              <div className="mb-10 text-[240px]">
+                {
+                  bombHolder?.avatar
+                }
+              </div>
+            )}
+
+            <div className="mb-8 text-[90px] font-black">
+              {
+                bombHolder?.name
+              }
+            </div>
+
+            <div className="animate-pulse text-[260px]">
+              💣
+            </div>
+          </>
+        )}
+      </main>
+    );
+  }
+
+  if (
+    mode ===
     'reaction-wait'
   ) {
     return (
@@ -392,7 +517,7 @@ export default function ScreenPage() {
 
   if (
     mode ===
-      'reaction-finished' &&
+    'reaction-finished' &&
     reactionWinner
   ) {
     return (
@@ -462,11 +587,10 @@ export default function ScreenPage() {
 
             <div
               className={`text-9xl font-black
-              ${
-                mazeTimer <= 10
+              ${mazeTimer <= 10
                   ? 'animate-pulse text-red-500'
                   : 'text-yellow-400'
-              }`}
+                }`}
             >
               {mazeTimer}
             </div>
@@ -518,7 +642,7 @@ export default function ScreenPage() {
 
               <div className="flex flex-col gap-4">
                 {mazeFinishedPlayers.length ===
-                0 ? (
+                  0 ? (
                   <div className="text-3xl text-gray-500">
                     Пока никто не
                     дошел...
@@ -585,12 +709,11 @@ export default function ScreenPage() {
                         player.id
                       }
                       className={`flex items-center justify-between rounded-2xl p-5
-                      ${
-                        index ===
-                        0
+                      ${index ===
+                          0
                           ? 'border border-yellow-400 bg-yellow-500/10'
                           : 'bg-black'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-4">
                         <div className="text-3xl font-black">
@@ -668,13 +791,12 @@ export default function ScreenPage() {
                 <div
                   key={index}
                   className={`rounded-3xl p-10 text-center text-4xl font-black transition-all duration-500
-                  ${
-                    questionEnded &&
-                    correctAnswer ===
+                  ${questionEnded &&
+                      correctAnswer ===
                       index
                       ? 'scale-105 bg-green-600 shadow-[0_0_40px_rgba(0,255,0,0.8)]'
                       : 'bg-red-600'
-                  }`}
+                    }`}
                 >
                   {answer}
                 </div>
@@ -700,14 +822,13 @@ export default function ScreenPage() {
                   player.id
                 }
                 className={`flex items-center justify-between rounded-3xl p-6 text-3xl font-black
-                ${
-                  player.lives <= 0
+                ${player.lives <= 0
                     ? 'bg-gray-900 opacity-30'
                     : index ===
                       0
-                    ? 'border-2 border-yellow-400 bg-yellow-500/10'
-                    : 'bg-gray-800'
-                }`}
+                      ? 'border-2 border-yellow-400 bg-yellow-500/10'
+                      : 'bg-gray-800'
+                  }`}
               >
                 <div className="flex items-center gap-5">
                   <div className="text-4xl">

@@ -464,11 +464,10 @@ export default function HostPage() {
 
         <div
           className={`rounded-3xl p-6 text-center
-          ${
-            miniGameActive
+          ${miniGameActive
               ? 'border border-purple-500 bg-purple-500/10'
               : 'border border-blue-500 bg-blue-500/10'
-          }`}
+            }`}
         >
           <div className="text-2xl font-black">
             {miniGameActive
@@ -484,7 +483,7 @@ export default function HostPage() {
 
       {miniGameActive &&
         currentMiniGame ===
-          '🧩 MAZE RUN' && (
+        '🧩 MAZE RUN' && (
           <div className="mb-8 grid grid-cols-3 gap-4">
             <div className="rounded-3xl border border-green-500 bg-green-500/10 p-6 text-center">
               <div className="text-5xl font-black">
@@ -524,18 +523,17 @@ export default function HostPage() {
           </div>
         )}
 
-      <div className="mb-8 grid grid-cols-2 gap-4">
+      <div className="mb-8 grid grid-cols-3 gap-4">
         <button
           disabled={
             miniGameActive
           }
           onClick={startGame}
           className={`rounded-3xl p-6 text-3xl font-black
-          ${
-            miniGameActive
+          ${miniGameActive
               ? 'bg-gray-700 opacity-40'
               : 'bg-green-600'
-          }`}
+            }`}
         >
           ▶ НАЧАТЬ ИГРУ
         </button>
@@ -548,11 +546,10 @@ export default function HostPage() {
             nextQuestion
           }
           className={`rounded-3xl p-6 text-3xl font-black
-          ${
-            miniGameActive
+          ${miniGameActive
               ? 'bg-gray-700 opacity-40'
               : 'bg-blue-600'
-          }`}
+            }`}
         >
           ⏭ СЛЕДУЮЩИЙ
           ВОПРОС
@@ -603,11 +600,10 @@ export default function HostPage() {
               reactionGame
             }
             className={`rounded-3xl p-6 text-3xl font-black
-            ${
-              miniGameActive
+            ${miniGameActive
                 ? 'bg-gray-700 opacity-40'
                 : 'bg-orange-500'
-            }`}
+              }`}
           >
             ⚡ REACTION
             GAME
@@ -621,11 +617,10 @@ export default function HostPage() {
               mazeRun
             }
             className={`rounded-3xl p-6 text-3xl font-black
-            ${
-              miniGameActive
+            ${miniGameActive
                 ? 'bg-gray-700 opacity-40'
                 : 'bg-cyan-600'
-            }`}
+              }`}
           >
             🧩 MAZE RUN
           </button>
@@ -634,6 +629,54 @@ export default function HostPage() {
 
       <div className="mb-8">
         <div className="mb-4 text-4xl font-black">
+
+          <button
+            disabled={
+              miniGameActive
+            }
+            onClick={() => {
+              const min =
+                Number(
+                  prompt(
+                    'Минимум передач',
+                    '10',
+                  ),
+                );
+
+              const max =
+                Number(
+                  prompt(
+                    'Максимум передач',
+                    '15',
+                  ),
+                );
+
+              if (
+                !min ||
+                !max
+              )
+                return;
+
+              socket.emit(
+                'startBombPassGame',
+                {
+                  roomCode,
+                  minPasses:
+                    min,
+                  maxPasses:
+                    max,
+                },
+              );
+            }}
+            className={`rounded-3xl p-6 text-3xl font-black
+                ${miniGameActive
+                ? 'bg-gray-700 opacity-40'
+                : 'bg-red-700'
+              }`}
+          >
+            💣 BOMB PASS
+          </button>
+
           ⚡ СПЕЦ.
           РАУНДЫ
         </div>
@@ -694,17 +737,16 @@ export default function HostPage() {
                   player.id
                 }
                 className={`flex items-center justify-between rounded-3xl border p-5 text-2xl font-black
-                ${
-                  player.disconnected
+                ${player.disconnected
                     ? 'border-yellow-500 bg-yellow-500/10'
                     : player.lives <=
                       0
-                    ? 'border-gray-700 bg-gray-900 opacity-40'
-                    : index ===
-                      0
-                    ? 'border-yellow-400 bg-yellow-500/10'
-                    : 'border-gray-700 bg-gray-800'
-                }`}
+                      ? 'border-gray-700 bg-gray-900 opacity-40'
+                      : index ===
+                        0
+                        ? 'border-yellow-400 bg-yellow-500/10'
+                        : 'border-gray-700 bg-gray-800'
+                  }`}
               >
                 <div className="flex items-center gap-4">
                   <div className="text-5xl">

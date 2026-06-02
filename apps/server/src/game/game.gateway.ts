@@ -16,6 +16,8 @@ import { forceRound } from './special-rounds/force-round';
 
 import { questions } from '../questions/questions';
 
+import { startBombPassGame, passBomb, } from './mini-games/bomb-pass.game';
+
 const rooms: any = {};
 
 const emojiAvatars = [
@@ -651,6 +653,15 @@ export class GameGateway {
 
       forceFinalRound:
         false,
+
+      bombHolder: null,
+
+      previousBombHolder:
+        null,
+
+      bombPassCount: 0,
+
+      explodeAt: 0,
     };
 
     client.join(
@@ -979,6 +990,117 @@ export class GameGateway {
       data.roomCode,
     );
   }
+
+  @SubscribeMessage(
+    'startBombPassGame',
+  )
+  startBombPassGameEvent(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      this.getRoom(
+        data.roomCode,
+      );
+
+    if (!room) return;
+
+    const result =
+      startBombPassGame(
+        room,
+        data.minPasses,
+        data.maxPasses,
+      );
+
+    this.server.to(
+      data.roomCode,
+    ).emit(
+      'bombPassStarted',
+      {
+        holder:
+          result.holder,
+
+        explodeAt:
+          result.explodeAt,
+      },
+    );
+  }
+
+  @SubscribeMessage(
+    'passBomb',
+  )
+  passBombEvent(
+    @MessageBody()
+    data: any,
+  ) {
+    const room =
+      this.getRoom(
+        data.roomCode,
+      );
+
+    if (!room) return;
+
+    const result =
+      passBomb(
+        room,
+        data.fromId,
+        data.toId,
+      );
+
+    if (!result)
+      return;
+
+    if (
+      result.exploded
+    ) {
+      const player =
+        room.players.find(
+          (p: any) =>
+            p.telegramId ===
+            data.toId,
+        );
+
+      if (player) {
+        player.lives =
+          Math.max(
+            0,
+            player.lives - 1,
+          );
+      }
+
+      this.server.to(
+        data.roomCode,
+      ).emit(
+        'bombExploded',
+        {
+          player,
+        },
+      );
+
+      room.miniGameActive =
+        false;
+
+      room.currentMiniGame =
+        null;
+
+      this.emitPlayers(
+        data.roomCode,
+      );
+
+      return;
+    }
+
+    this.server.to(
+      data.roomCode,
+    ).emit(
+      'bombPassed',
+      {
+        holder:
+          result.holder,
+      },
+    );
+  }
+
 
   @SubscribeMessage(
     'startMazeGame',

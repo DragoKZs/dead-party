@@ -40,7 +40,8 @@ type GameMode =
   | 'reaction-wait'
   | 'reaction-active'
   | 'reaction-finished'
-  | 'maze';
+  | 'maze'
+  | 'bomb-pass';
 
 export default function Home() {
   const [mode, setMode] =
@@ -131,6 +132,34 @@ export default function Home() {
     notification,
     setNotification,
   ] = useState('');
+
+  const [
+    players,
+    setPlayers,
+  ] = useState<any[]>(
+    [],
+  );
+
+  const [
+    bombHolder,
+    setBombHolder,
+  ] = useState<any>(
+    null,
+  );
+
+  const [
+    bombPlayers,
+    setBombPlayers,
+  ] = useState<any[]>(
+    [],
+  );
+
+  const [
+    explodedPlayer,
+    setExplodedPlayer,
+  ] = useState<any>(
+    null,
+  );
 
   const randomEmoji =
     useMemo(() => {
@@ -393,6 +422,45 @@ export default function Home() {
             true,
           );
         }
+      },
+    );
+
+    socket.on(
+      'bombPassStarted',
+      (data) => {
+        setMode(
+          'bomb-pass',
+        );
+
+        setBombHolder(
+          data.holder,
+        );
+      },
+    );
+
+    socket.on(
+      'bombPassed',
+      (data) => {
+        setBombHolder(
+          data.holder,
+        );
+      },
+    );
+
+    socket.on(
+      'bombExploded',
+      (data) => {
+        setExplodedPlayer(
+          data.player,
+        );
+
+        setTimeout(() => {
+          setMode('menu');
+
+          setExplodedPlayer(
+            null,
+          );
+        }, 4000);
       },
     );
 
@@ -856,6 +924,147 @@ export default function Home() {
                 </button>
               </div>
             </div>
+          </>
+        )}
+      </main>
+    );
+  }
+
+  if (
+    mode ===
+    'bomb-pass'
+  ) {
+    const isHolder =
+      bombHolder
+        ?.telegramId ===
+      telegramId;
+
+    return (
+      <main className="flex min-h-screen flex-col bg-black p-4 text-white">
+        <div className="mb-6 text-center text-5xl font-black text-red-500">
+          💣 BOMB PASS
+        </div>
+
+        {explodedPlayer ? (
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <div className="mb-8 animate-bounce text-[140px]">
+              💥
+            </div>
+
+            <div className="mb-4 text-5xl font-black text-red-500">
+              БОМБА
+              ВЗОРВАЛАСЬ
+            </div>
+
+            <div className="text-4xl font-black">
+              {
+                explodedPlayer.name
+              }
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-8 flex flex-col items-center">
+              {bombHolder
+                ?.avatar?.startsWith(
+                  'data:image',
+                ) ||
+                bombHolder?.avatar?.startsWith(
+                  'http',
+                ) ? (
+                <img
+                  src={
+                    bombHolder.avatar
+                  }
+                  alt="avatar"
+                  className="mb-4 h-40 w-40 rounded-full border-4 border-red-500 object-cover"
+                />
+              ) : (
+                <div className="mb-4 flex h-40 w-40 items-center justify-center rounded-full border-4 border-red-500 bg-gray-900 text-8xl">
+                  {
+                    bombHolder?.avatar
+                  }
+                </div>
+              )}
+
+              <div className="text-5xl font-black">
+                {
+                  bombHolder?.name
+                }
+              </div>
+
+              <div className="mt-4 text-8xl animate-pulse">
+                💣
+              </div>
+            </div>
+
+            {isHolder && (
+              <div className="grid gap-4">
+                {players
+                  ?.filter(
+                    (
+                      player: any,
+                    ) =>
+                      player.telegramId !==
+                      telegramId &&
+                      player.telegramId !==
+                      bombHolder
+                        ?.telegramId
+                  )
+                  .slice(0, 6)
+                  .map(
+                    (
+                      player: any,
+                    ) => (
+                      <button
+                        key={
+                          player.telegramId
+                        }
+                        onClick={() => {
+                          socket.emit(
+                            'passBomb',
+                            {
+                              roomCode,
+                              fromId:
+                                telegramId,
+                              toId:
+                                player.telegramId,
+                            },
+                          );
+                        }}
+                        className="flex items-center gap-4 rounded-3xl bg-red-600 p-5 text-left"
+                      >
+                        {player.avatar?.startsWith(
+                          'data:image',
+                        ) ||
+                          player.avatar?.startsWith(
+                            'http',
+                          ) ? (
+                          <img
+                            src={
+                              player.avatar
+                            }
+                            alt="avatar"
+                            className="h-16 w-16 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-900 text-4xl">
+                            {
+                              player.avatar
+                            }
+                          </div>
+                        )}
+
+                        <div className="text-2xl font-black">
+                          {
+                            player.name
+                          }
+                        </div>
+                      </button>
+                    ),
+                  )}
+              </div>
+            )}
           </>
         )}
       </main>
