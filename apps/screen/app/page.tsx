@@ -361,16 +361,22 @@ export default function ScreenPage() {
           data.eliminated,
         );
 
-        setTimeout(() => {
-          setSurvivalQuestion(
-            data.question,
-          );
-
-          setDeadPlayers(
-            (prev) => [
+        setDeadPlayers(
+          (
+            prev: string[],
+          ) => [
               ...prev,
               ...data.eliminated,
             ],
+        );
+
+        setTimeout(() => {
+          setPlayerChoices(
+            {},
+          );
+
+          setSurvivalQuestion(
+            data.question,
           );
 
           setSurvivalRound(
