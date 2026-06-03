@@ -755,718 +755,719 @@ export default function Home() {
           index,
       },
     );
+  };
 
-    const reactionClick =
-      () => {
-        socket.emit(
-          'reactionClick',
-          {
-            roomCode,
-          },
-        );
-      };
-
-    const move = (
-      direction:
-        | 'up'
-        | 'down'
-        | 'left'
-        | 'right',
-    ) => {
-      if (
-        mazeFinished
-      )
-        return;
-
+  const reactionClick =
+    () => {
       socket.emit(
-        'moveMazePlayer',
+        'reactionClick',
         {
           roomCode,
-          direction,
         },
       );
     };
 
-    const uploadAvatar =
-      (
-        e: React.ChangeEvent<HTMLInputElement>,
-      ) => {
-        const file =
-          e.target.files?.[0];
+  const move = (
+    direction:
+      | 'up'
+      | 'down'
+      | 'left'
+      | 'right',
+  ) => {
+    if (
+      mazeFinished
+    )
+      return;
 
-        if (!file)
-          return;
+    socket.emit(
+      'moveMazePlayer',
+      {
+        roomCode,
+        direction,
+      },
+    );
+  };
 
-        const reader =
-          new FileReader();
+  const uploadAvatar =
+    (
+      e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+      const file =
+        e.target.files?.[0];
 
-        reader.onload =
-          () => {
-            if (
-              typeof reader.result ===
-              'string'
-            ) {
-              setAvatar(
-                reader.result,
-              );
-            }
-          };
+      if (!file)
+        return;
 
-        reader.readAsDataURL(
-          file,
+      const reader =
+        new FileReader();
+
+      reader.onload =
+        () => {
+          if (
+            typeof reader.result ===
+            'string'
+          ) {
+            setAvatar(
+              reader.result,
+            );
+          }
+        };
+
+      reader.readAsDataURL(
+        file,
+      );
+    };
+
+  const setRandomEmoji =
+    () => {
+      const random =
+        emojiAvatars[
+        Math.floor(
+          Math.random() *
+          emojiAvatars.length,
+        )
+        ];
+
+      setAvatar(random);
+    };
+
+  const restoreTelegramAvatar =
+    () => {
+      if (
+        telegramAvatar
+      ) {
+        setAvatar(
+          telegramAvatar,
         );
-      };
+      }
+    };
 
-    const setRandomEmoji =
-      () => {
-        const random =
-          emojiAvatars[
-          Math.floor(
-            Math.random() *
-            emojiAvatars.length,
-          )
-          ];
+  if (!joined) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
+        <div className="mb-8 text-6xl font-black text-red-600">
+          DEAD PARTY
+        </div>
 
-        setAvatar(random);
-      };
-
-    const restoreTelegramAvatar =
-      () => {
-        if (
-          telegramAvatar
-        ) {
-          setAvatar(
-            telegramAvatar,
-          );
-        }
-      };
-
-    if (!joined) {
-      return (
-        <main className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
-          <div className="mb-8 text-6xl font-black text-red-600">
-            DEAD PARTY
-          </div>
-
-          <div className="mb-6">
-            {avatar?.startsWith(
-              'data:image',
-            ) ||
-              avatar?.startsWith(
-                'http',
-              ) ? (
-              <img
-                src={avatar}
-                alt="avatar"
-                className="h-32 w-32 rounded-full border-4 border-red-500 object-cover"
-              />
-            ) : (
-              <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-red-500 bg-gray-900 text-7xl">
-                {avatar}
-              </div>
-            )}
-          </div>
-
-          <div className="mb-6 flex flex-wrap justify-center gap-3">
-            <button
-              onClick={
-                setRandomEmoji
-              }
-              className="rounded-2xl bg-gray-900 px-5 py-3 text-xl font-black"
-            >
-              🎲 ЭМОДЗИ
-            </button>
-
-            {telegramAvatar && (
-              <button
-                onClick={
-                  restoreTelegramAvatar
-                }
-                className="rounded-2xl bg-blue-600 px-5 py-3 text-xl font-black"
-              >
-                📸 TELEGRAM
-              </button>
-            )}
-
-            <label className="cursor-pointer rounded-2xl bg-green-600 px-5 py-3 text-xl font-black">
-              🖼 ЗАГРУЗИТЬ
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={
-                  uploadAvatar
-                }
-              />
-            </label>
-          </div>
-
-          <div className="flex w-full max-w-sm flex-col gap-4">
-            <input
-              type="text"
-              value={playerName}
-              onChange={(e) =>
-                setPlayerName(
-                  e.target.value,
-                )
-              }
-              placeholder="ВАШЕ ИМЯ"
-              className="rounded-2xl bg-gray-900 p-5 text-2xl outline-none"
+        <div className="mb-6">
+          {avatar?.startsWith(
+            'data:image',
+          ) ||
+            avatar?.startsWith(
+              'http',
+            ) ? (
+            <img
+              src={avatar}
+              alt="avatar"
+              className="h-32 w-32 rounded-full border-4 border-red-500 object-cover"
             />
-
-            <input
-              type="text"
-              value={roomCode}
-              onChange={(e) =>
-                setRoomCode(
-                  e.target.value,
-                )
-              }
-              placeholder="КОД КОМНАТЫ"
-              className="rounded-2xl bg-gray-900 p-5 text-2xl outline-none"
-            />
-
-            <button
-              onClick={joinRoom}
-              className="rounded-2xl bg-red-600 p-5 text-3xl font-black"
-            >
-              ВОЙТИ
-            </button>
-          </div>
-        </main>
-      );
-    }
-
-    if (
-      mode ===
-      'reaction-wait'
-    ) {
-      return (
-        <main className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black text-white">
-          <div className="absolute inset-0 animate-pulse bg-red-950 opacity-30" />
-
-          <div className="relative z-10 text-center">
-            <div className="mb-10 animate-spin text-9xl">
-              ⚡
+          ) : (
+            <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-red-500 bg-gray-900 text-7xl">
+              {avatar}
             </div>
+          )}
+        </div>
 
-            <div className="animate-pulse text-6xl font-black">
-              ГОТОВЬТЕСЬ...
-            </div>
-          </div>
-        </main>
-      );
-    }
-
-    if (
-      mode ===
-      'reaction-active'
-    ) {
-      return (
-        <main className="flex min-h-screen flex-col items-center justify-center bg-red-950 text-white">
+        <div className="mb-6 flex flex-wrap justify-center gap-3">
           <button
             onClick={
-              reactionClick
+              setRandomEmoji
             }
-            className="flex h-[320px] w-[320px] items-center justify-center rounded-full bg-red-600 text-[120px] shadow-[0_0_80px_rgba(255,0,0,0.9)] active:scale-95"
+            className="rounded-2xl bg-gray-900 px-5 py-3 text-xl font-black"
           >
-            ⚡
+            🎲 ЭМОДЗИ
           </button>
 
-          <div className="mt-10 animate-pulse text-5xl font-black">
-            ЖМИ!!!
-          </div>
-        </main>
-      );
-    }
+          {telegramAvatar && (
+            <button
+              onClick={
+                restoreTelegramAvatar
+              }
+              className="rounded-2xl bg-blue-600 px-5 py-3 text-xl font-black"
+            >
+              📸 TELEGRAM
+            </button>
+          )}
 
-    if (
-      mode ===
-      'reaction-finished' &&
-      reactionWinner
-    ) {
-      return (
-        <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white">
-          <div className="mb-8 text-8xl">
+          <label className="cursor-pointer rounded-2xl bg-green-600 px-5 py-3 text-xl font-black">
+            🖼 ЗАГРУЗИТЬ
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={
+                uploadAvatar
+              }
+            />
+          </label>
+        </div>
+
+        <div className="flex w-full max-w-sm flex-col gap-4">
+          <input
+            type="text"
+            value={playerName}
+            onChange={(e) =>
+              setPlayerName(
+                e.target.value,
+              )
+            }
+            placeholder="ВАШЕ ИМЯ"
+            className="rounded-2xl bg-gray-900 p-5 text-2xl outline-none"
+          />
+
+          <input
+            type="text"
+            value={roomCode}
+            onChange={(e) =>
+              setRoomCode(
+                e.target.value,
+              )
+            }
+            placeholder="КОД КОМНАТЫ"
+            className="rounded-2xl bg-gray-900 p-5 text-2xl outline-none"
+          />
+
+          <button
+            onClick={joinRoom}
+            className="rounded-2xl bg-red-600 p-5 text-3xl font-black"
+          >
+            ВОЙТИ
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  if (
+    mode ===
+    'reaction-wait'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black text-white">
+        <div className="absolute inset-0 animate-pulse bg-red-950 opacity-30" />
+
+        <div className="relative z-10 text-center">
+          <div className="mb-10 animate-spin text-9xl">
             ⚡
           </div>
 
-          <div className="mb-5 text-5xl font-black text-yellow-400">
-            САМЫЙ БЫСТРЫЙ
+          <div className="animate-pulse text-6xl font-black">
+            ГОТОВЬТЕСЬ...
           </div>
+        </div>
+      </main>
+    );
+  }
 
-          <div className="text-6xl font-black text-red-500">
-            {
-              reactionWinner.name
-            }
-          </div>
-        </main>
-      );
-    }
-
-    if (
-      mode === 'maze'
-    ) {
-      return (
-        <main className="flex min-h-screen flex-col items-center bg-black p-4 text-white">
-          {notification && (
-            <div className="absolute top-8 z-50 animate-bounce rounded-3xl border-2 border-yellow-400 bg-black px-8 py-4 text-2xl font-black text-yellow-400">
-              {notification}
-            </div>
-          )}
-
-          <div className="mb-4 flex w-full items-center justify-between">
-            <div className="rounded-2xl bg-gray-900 px-5 py-3 text-xl font-black">
-              🧩{' '}
-              {mazeDifficulty.toUpperCase()}
-            </div>
-
-            <div className="text-5xl font-black text-yellow-400">
-              ⏳ {mazeTimer}
-            </div>
-          </div>
-
-          {mazeFinished ? (
-            <div className="flex flex-1 flex-col items-center justify-center text-center">
-              <div className="mb-8 text-9xl">
-                ❤️
-              </div>
-
-              <div className="text-5xl font-black text-green-400">
-                ЛАБИРИНТ
-                ПРОЙДЕН
-              </div>
-            </div>
-          ) : (
-            <>
-              <div
-                className="grid gap-[2px] rounded-3xl bg-gray-950 p-3"
-                style={{
-                  gridTemplateColumns: `repeat(${maze[0]?.length}, 1fr)`,
-                }}
-              >
-                {maze.flatMap(
-                  (
-                    row,
-                    y,
-                  ) =>
-                    row.map(
-                      (
-                        cell,
-                        x,
-                      ) => {
-                        const isPlayer =
-                          mazePosition.x ===
-                          x &&
-                          mazePosition.y ===
-                          y;
-
-                        return (
-                          <div
-                            key={`${x}-${y}`}
-                            className={`flex h-6 w-6 items-center justify-center rounded-sm text-xs
-                          ${cell === 1
-                                ? 'bg-red-950'
-                                : cell ===
-                                  2
-                                  ? 'bg-pink-500'
-                                  : 'bg-gray-800'
-                              }`}
-                          >
-                            {cell ===
-                              2 &&
-                              !isPlayer &&
-                              '❤️'}
-
-                            {isPlayer &&
-                              '🙂'}
-                          </div>
-                        );
-                      },
-                    ),
-                )}
-              </div>
-
-              <div className="mt-8 flex flex-col items-center gap-4">
-                <button
-                  onClick={() =>
-                    move('up')
-                  }
-                  className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
-                >
-                  ⬆
-                </button>
-
-                <div className="flex gap-4">
-                  <button
-                    onClick={() =>
-                      move(
-                        'left',
-                      )
-                    }
-                    className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
-                  >
-                    ⬅
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      move(
-                        'down',
-                      )
-                    }
-                    className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
-                  >
-                    ⬇
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      move(
-                        'right',
-                      )
-                    }
-                    className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
-                  >
-                    ➡
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </main>
-      );
-    }
-
-    if (
-      mode ===
-      'bomb-pass'
-    ) {
-      const isHolder =
-        bombHolder
-          ?.telegramId ===
-        telegramId;
-
-      return (
-        <main className="flex min-h-screen flex-col bg-black p-4 text-white">
-          <div className="mb-6 text-center text-5xl font-black text-red-500">
-            💣 BOMB PASS
-          </div>
-
-          {explodedPlayer ? (
-            <div className="flex flex-1 flex-col items-center justify-center">
-              <div className="mb-8 animate-bounce text-[140px]">
-                💥
-              </div>
-
-              <div className="mb-4 text-5xl font-black text-red-500">
-                БОМБА
-                ВЗОРВАЛАСЬ
-              </div>
-
-              <div className="text-4xl font-black">
-                {
-                  explodedPlayer.name
-                }
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="mb-8 flex flex-col items-center">
-                {bombHolder
-                  ?.avatar?.startsWith(
-                    'data:image',
-                  ) ||
-                  bombHolder?.avatar?.startsWith(
-                    'http',
-                  ) ? (
-                  <img
-                    src={
-                      bombHolder.avatar
-                    }
-                    alt="avatar"
-                    className="mb-4 h-40 w-40 rounded-full border-4 border-red-500 object-cover"
-                  />
-                ) : (
-                  <div className="mb-4 flex h-40 w-40 items-center justify-center rounded-full border-4 border-red-500 bg-gray-900 text-8xl">
-                    {
-                      bombHolder?.avatar
-                    }
-                  </div>
-                )}
-
-                <div className="text-5xl font-black">
-                  {
-                    bombHolder?.name
-                  }
-                </div>
-
-                <div className="mt-4 text-8xl animate-pulse">
-                  💣
-                </div>
-              </div>
-
-              {isHolder ? (
-                <div className="grid gap-4">
-                  {players
-                    ?.filter(
-                      (
-                        player: any,
-                      ) =>
-                        player.telegramId !==
-                        telegramId &&
-                        player.telegramId !==
-                        bombHolder
-                          ?.telegramId,
-                    )
-                    .slice(0, 6)
-                    .map(
-                      (
-                        player: any,
-                      ) => (
-                        <button
-                          key={
-                            player.telegramId
-                          }
-                          onClick={() => {
-                            socket.emit(
-                              'passBomb',
-                              {
-                                roomCode,
-                                fromId:
-                                  telegramId,
-                                toId:
-                                  player.telegramId,
-                              },
-                            );
-                          }}
-                          className="flex items-center gap-4 rounded-3xl bg-red-600 p-5 text-left"
-                        >
-                          {player.avatar?.startsWith(
-                            'data:image',
-                          ) ||
-                            player.avatar?.startsWith(
-                              'http',
-                            ) ? (
-                            <img
-                              src={
-                                player.avatar
-                              }
-                              alt="avatar"
-                              className="h-16 w-16 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-900 text-4xl">
-                              {
-                                player.avatar
-                              }
-                            </div>
-                          )}
-
-                          <div className="text-2xl font-black">
-                            {
-                              player.name
-                            }
-                          </div>
-                        </button>
-                      ),
-                    )}
-                </div>
-              ) : (
-                <div className="mt-10 text-center text-4xl font-black text-gray-400">
-                  У КОГО-ТО 💣
-                </div>
-              )}
-            </>
-          )}
-        </main>
-      );
-    }
-
-    if (
-      mode ===
-      'survival-run'
-    ) {
-      return (
-        <main className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
-          <div className="mb-6 text-5xl font-black text-yellow-400">
-            <div
-              className={`text-7xl font-black
-                ${survivalTimer <= 3
-                  ? 'animate-pulse text-red-500'
-                  : 'text-white'
-                }`}
-            >
-              ⏳ {
-                survivalTimer
-              }
-            </div>
-            РАУНД {
-              survivalRound
-            } / 5
-          </div>
-
-          {survivalDead ? (
-            <div className="flex flex-col items-center">
-              <div className="mb-8 text-[140px]">
-                💀
-              </div>
-
-              <div className="text-6xl font-black text-red-500">
-                ТЫ ПРОИГРАЛ
-              </div>
-            </div>
-          ) : survivalResult ? (
-            <div className="flex flex-col items-center">
-              <div className="mb-8 text-[120px]">
-                {survivalResult ===
-                  'alive'
-                  ? '✅'
-                  : '💀'}
-              </div>
-
-              <div className="text-5xl font-black">
-                {survivalResult ===
-                  'alive'
-                  ? 'ТЫ ВЫЖИЛ'
-                  : 'ТЫ ПРОИГРАЛ'}
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="mb-10 rounded-3xl bg-gray-900 p-8 text-center text-4xl font-black">
-                {
-                  survivalQuestion?.question
-                }
-              </div>
-
-              <div className="grid w-full max-w-xl gap-6">
-                <button
-                  disabled={
-                    survivalLocked
-                  }
-                  onClick={() => {
-                    setSurvivalLocked(
-                      true,
-                    );
-
-                    socket.emit(
-                      'submitSurvivalAnswer',
-                      {
-                        roomCode,
-                        telegramId,
-                        answer:
-                          'left',
-                      },
-                    );
-                  }}
-                  className="rounded-3xl bg-blue-600 p-8 text-4xl font-black active:scale-95"
-                >
-                  {
-                    survivalQuestion?.left
-                  }
-                </button>
-
-                <button
-                  disabled={
-                    survivalLocked
-                  }
-                  onClick={() => {
-                    setSurvivalLocked(
-                      true,
-                    );
-
-                    socket.emit(
-                      'submitSurvivalAnswer',
-                      {
-                        roomCode,
-                        telegramId,
-                        answer:
-                          'right',
-                      },
-                    );
-                  }}
-                  className="rounded-3xl bg-red-600 p-8 text-4xl font-black active:scale-95"
-                >
-                  {
-                    survivalQuestion?.right
-                  }
-                </button>
-              </div>
-            </>
-          )}
-        </main>
-      );
-    }
-
+  if (
+    mode ===
+    'reaction-active'
+  ) {
     return (
-      <main className="flex min-h-screen flex-col bg-black p-4 text-white">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-red-950 text-white">
+        <button
+          onClick={
+            reactionClick
+          }
+          className="flex h-[320px] w-[320px] items-center justify-center rounded-full bg-red-600 text-[120px] shadow-[0_0_80px_rgba(255,0,0,0.9)] active:scale-95"
+        >
+          ⚡
+        </button>
+
+        <div className="mt-10 animate-pulse text-5xl font-black">
+          ЖМИ!!!
+        </div>
+      </main>
+    );
+  }
+
+  if (
+    mode ===
+    'reaction-finished' &&
+    reactionWinner
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white">
+        <div className="mb-8 text-8xl">
+          ⚡
+        </div>
+
+        <div className="mb-5 text-5xl font-black text-yellow-400">
+          САМЫЙ БЫСТРЫЙ
+        </div>
+
+        <div className="text-6xl font-black text-red-500">
+          {
+            reactionWinner.name
+          }
+        </div>
+      </main>
+    );
+  }
+
+  if (
+    mode === 'maze'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center bg-black p-4 text-white">
         {notification && (
-          <div className="absolute left-1/2 top-8 z-50 -translate-x-1/2 animate-bounce rounded-3xl border-2 border-yellow-400 bg-black px-8 py-4 text-2xl font-black text-yellow-400">
+          <div className="absolute top-8 z-50 animate-bounce rounded-3xl border-2 border-yellow-400 bg-black px-8 py-4 text-2xl font-black text-yellow-400">
             {notification}
           </div>
         )}
 
-        <div className="mb-6 flex items-center justify-between">
-          <div className="text-2xl font-black">
-            {playerName}
+        <div className="mb-4 flex w-full items-center justify-between">
+          <div className="rounded-2xl bg-gray-900 px-5 py-3 text-xl font-black">
+            🧩{' '}
+            {mazeDifficulty.toUpperCase()}
           </div>
 
           <div className="text-5xl font-black text-yellow-400">
-            {timeLeft}
+            ⏳ {mazeTimer}
           </div>
         </div>
 
-        {question && (
-          <div className="flex flex-1 flex-col gap-4">
-            <div className="rounded-3xl bg-gray-900 p-6 text-center text-3xl font-black">
-              {question.text}
+        {mazeFinished ? (
+          <div className="flex flex-1 flex-col items-center justify-center text-center">
+            <div className="mb-8 text-9xl">
+              ❤️
             </div>
 
-            <div className="grid gap-4">
-              {question.answers.map(
-                (
-                  answer: string,
-                  index: number,
-                ) => (
-                  <button
-                    key={index}
-                    disabled={locked}
-                    onClick={() =>
-                      submitAnswer(
-                        index,
-                      )
-                    }
-                    className={`rounded-3xl p-6 text-center text-2xl font-black transition-all duration-500
-
-                      ${blackoutHidden
-                        ? 'blur-md brightness-50'
-                        : ''
-                      }
-
-                      ${questionEnded &&
-                        correctAnswer ===
-                        index
-                        ? 'bg-green-600'
-                        : locked
-                          ? 'bg-gray-700'
-                          : 'bg-red-600 active:scale-[0.98]'
-                      }`}
-                  >
-                    {answer}
-                  </button>
-                ),
-              )}
+            <div className="text-5xl font-black text-green-400">
+              ЛАБИРИНТ
+              ПРОЙДЕН
             </div>
-
-            {locked &&
-              !questionEnded && (
-                <div className="rounded-2xl bg-blue-600 p-5 text-center text-2xl font-black">
-                  ОТВЕТ ПРИНЯТ
-                </div>
-              )}
           </div>
+        ) : (
+          <>
+            <div
+              className="grid gap-[2px] rounded-3xl bg-gray-950 p-3"
+              style={{
+                gridTemplateColumns: `repeat(${maze[0]?.length}, 1fr)`,
+              }}
+            >
+              {maze.flatMap(
+                (
+                  row,
+                  y,
+                ) =>
+                  row.map(
+                    (
+                      cell,
+                      x,
+                    ) => {
+                      const isPlayer =
+                        mazePosition.x ===
+                        x &&
+                        mazePosition.y ===
+                        y;
+
+                      return (
+                        <div
+                          key={`${x}-${y}`}
+                          className={`flex h-6 w-6 items-center justify-center rounded-sm text-xs
+                          ${cell === 1
+                              ? 'bg-red-950'
+                              : cell ===
+                                2
+                                ? 'bg-pink-500'
+                                : 'bg-gray-800'
+                            }`}
+                        >
+                          {cell ===
+                            2 &&
+                            !isPlayer &&
+                            '❤️'}
+
+                          {isPlayer &&
+                            '🙂'}
+                        </div>
+                      );
+                    },
+                  ),
+              )}
+            </div>
+
+            <div className="mt-8 flex flex-col items-center gap-4">
+              <button
+                onClick={() =>
+                  move('up')
+                }
+                className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
+              >
+                ⬆
+              </button>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() =>
+                    move(
+                      'left',
+                    )
+                  }
+                  className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
+                >
+                  ⬅
+                </button>
+
+                <button
+                  onClick={() =>
+                    move(
+                      'down',
+                    )
+                  }
+                  className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
+                >
+                  ⬇
+                </button>
+
+                <button
+                  onClick={() =>
+                    move(
+                      'right',
+                    )
+                  }
+                  className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gray-900 text-5xl"
+                >
+                  ➡
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </main>
     );
   }
+
+  if (
+    mode ===
+    'bomb-pass'
+  ) {
+    const isHolder =
+      bombHolder
+        ?.telegramId ===
+      telegramId;
+
+    return (
+      <main className="flex min-h-screen flex-col bg-black p-4 text-white">
+        <div className="mb-6 text-center text-5xl font-black text-red-500">
+          💣 BOMB PASS
+        </div>
+
+        {explodedPlayer ? (
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <div className="mb-8 animate-bounce text-[140px]">
+              💥
+            </div>
+
+            <div className="mb-4 text-5xl font-black text-red-500">
+              БОМБА
+              ВЗОРВАЛАСЬ
+            </div>
+
+            <div className="text-4xl font-black">
+              {
+                explodedPlayer.name
+              }
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-8 flex flex-col items-center">
+              {bombHolder
+                ?.avatar?.startsWith(
+                  'data:image',
+                ) ||
+                bombHolder?.avatar?.startsWith(
+                  'http',
+                ) ? (
+                <img
+                  src={
+                    bombHolder.avatar
+                  }
+                  alt="avatar"
+                  className="mb-4 h-40 w-40 rounded-full border-4 border-red-500 object-cover"
+                />
+              ) : (
+                <div className="mb-4 flex h-40 w-40 items-center justify-center rounded-full border-4 border-red-500 bg-gray-900 text-8xl">
+                  {
+                    bombHolder?.avatar
+                  }
+                </div>
+              )}
+
+              <div className="text-5xl font-black">
+                {
+                  bombHolder?.name
+                }
+              </div>
+
+              <div className="mt-4 text-8xl animate-pulse">
+                💣
+              </div>
+            </div>
+
+            {isHolder ? (
+              <div className="grid gap-4">
+                {players
+                  ?.filter(
+                    (
+                      player: any,
+                    ) =>
+                      player.telegramId !==
+                      telegramId &&
+                      player.telegramId !==
+                      bombHolder
+                        ?.telegramId,
+                  )
+                  .slice(0, 6)
+                  .map(
+                    (
+                      player: any,
+                    ) => (
+                      <button
+                        key={
+                          player.telegramId
+                        }
+                        onClick={() => {
+                          socket.emit(
+                            'passBomb',
+                            {
+                              roomCode,
+                              fromId:
+                                telegramId,
+                              toId:
+                                player.telegramId,
+                            },
+                          );
+                        }}
+                        className="flex items-center gap-4 rounded-3xl bg-red-600 p-5 text-left"
+                      >
+                        {player.avatar?.startsWith(
+                          'data:image',
+                        ) ||
+                          player.avatar?.startsWith(
+                            'http',
+                          ) ? (
+                          <img
+                            src={
+                              player.avatar
+                            }
+                            alt="avatar"
+                            className="h-16 w-16 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-900 text-4xl">
+                            {
+                              player.avatar
+                            }
+                          </div>
+                        )}
+
+                        <div className="text-2xl font-black">
+                          {
+                            player.name
+                          }
+                        </div>
+                      </button>
+                    ),
+                  )}
+              </div>
+            ) : (
+              <div className="mt-10 text-center text-4xl font-black text-gray-400">
+                У КОГО-ТО 💣
+              </div>
+            )}
+          </>
+        )}
+      </main>
+    );
+  }
+
+  if (
+    mode ===
+    'survival-run'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-black p-6 text-white">
+        <div className="mb-6 text-5xl font-black text-yellow-400">
+          <div
+            className={`text-7xl font-black
+                ${survivalTimer <= 3
+                ? 'animate-pulse text-red-500'
+                : 'text-white'
+              }`}
+          >
+            ⏳ {
+              survivalTimer
+            }
+          </div>
+          РАУНД {
+            survivalRound
+          } / 5
+        </div>
+
+        {survivalDead ? (
+          <div className="flex flex-col items-center">
+            <div className="mb-8 text-[140px]">
+              💀
+            </div>
+
+            <div className="text-6xl font-black text-red-500">
+              ТЫ ПРОИГРАЛ
+            </div>
+          </div>
+        ) : survivalResult ? (
+          <div className="flex flex-col items-center">
+            <div className="mb-8 text-[120px]">
+              {survivalResult ===
+                'alive'
+                ? '✅'
+                : '💀'}
+            </div>
+
+            <div className="text-5xl font-black">
+              {survivalResult ===
+                'alive'
+                ? 'ТЫ ВЫЖИЛ'
+                : 'ТЫ ПРОИГРАЛ'}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="mb-10 rounded-3xl bg-gray-900 p-8 text-center text-4xl font-black">
+              {
+                survivalQuestion?.question
+              }
+            </div>
+
+            <div className="grid w-full max-w-xl gap-6">
+              <button
+                disabled={
+                  survivalLocked
+                }
+                onClick={() => {
+                  setSurvivalLocked(
+                    true,
+                  );
+
+                  socket.emit(
+                    'submitSurvivalAnswer',
+                    {
+                      roomCode,
+                      telegramId,
+                      answer:
+                        'left',
+                    },
+                  );
+                }}
+                className="rounded-3xl bg-blue-600 p-8 text-4xl font-black active:scale-95"
+              >
+                {
+                  survivalQuestion?.left
+                }
+              </button>
+
+              <button
+                disabled={
+                  survivalLocked
+                }
+                onClick={() => {
+                  setSurvivalLocked(
+                    true,
+                  );
+
+                  socket.emit(
+                    'submitSurvivalAnswer',
+                    {
+                      roomCode,
+                      telegramId,
+                      answer:
+                        'right',
+                    },
+                  );
+                }}
+                className="rounded-3xl bg-red-600 p-8 text-4xl font-black active:scale-95"
+              >
+                {
+                  survivalQuestion?.right
+                }
+              </button>
+            </div>
+          </>
+        )}
+      </main>
+    );
+  }
+
+  return (
+    <main className="flex min-h-screen flex-col bg-black p-4 text-white">
+      {notification && (
+        <div className="absolute left-1/2 top-8 z-50 -translate-x-1/2 animate-bounce rounded-3xl border-2 border-yellow-400 bg-black px-8 py-4 text-2xl font-black text-yellow-400">
+          {notification}
+        </div>
+      )}
+
+      <div className="mb-6 flex items-center justify-between">
+        <div className="text-2xl font-black">
+          {playerName}
+        </div>
+
+        <div className="text-5xl font-black text-yellow-400">
+          {timeLeft}
+        </div>
+      </div>
+
+      {question && (
+        <div className="flex flex-1 flex-col gap-4">
+          <div className="rounded-3xl bg-gray-900 p-6 text-center text-3xl font-black">
+            {question.text}
+          </div>
+
+          <div className="grid gap-4">
+            {question.answers.map(
+              (
+                answer: string,
+                index: number,
+              ) => (
+                <button
+                  key={index}
+                  disabled={locked}
+                  onClick={() =>
+                    submitAnswer(
+                      index,
+                    )
+                  }
+                  className={`rounded-3xl p-6 text-center text-2xl font-black transition-all duration-500
+
+                      ${blackoutHidden
+                      ? 'blur-md brightness-50'
+                      : ''
+                    }
+
+                      ${questionEnded &&
+                      correctAnswer ===
+                      index
+                      ? 'bg-green-600'
+                      : locked
+                        ? 'bg-gray-700'
+                        : 'bg-red-600 active:scale-[0.98]'
+                    }`}
+                >
+                  {answer}
+                </button>
+              ),
+            )}
+          </div>
+
+          {locked &&
+            !questionEnded && (
+              <div className="rounded-2xl bg-blue-600 p-5 text-center text-2xl font-black">
+                ОТВЕТ ПРИНЯТ
+              </div>
+            )}
+        </div>
+      )}
+    </main>
+  );
+}
