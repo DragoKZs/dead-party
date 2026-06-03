@@ -437,6 +437,204 @@ export class GameGateway {
     }, delay);
   }
 
+  private startFinalGame(
+    roomCode: string,
+  ) {
+    const room =
+      this.getRoom(
+        roomCode,
+      );
+
+    if (!room) return;
+
+    room.finalActive =
+      true;
+
+    room.finalQuestionIndex =
+      0;
+
+    room.finalQuestions =
+      [...questions]
+        .sort(
+          () =>
+            Math.random() -
+            0.5,
+        )
+        .slice(0, 5);
+
+    const askQuestion =
+      () => {
+        const question =
+          room
+            .finalQuestions[
+          room
+            .finalQuestionIndex
+          ];
+
+        if (!question) {
+          room.finalActive =
+            false;
+
+          const sorted = [
+            ...room.players,
+          ].sort(
+            (
+              a,
+              b,
+            ) => {
+              if (
+                a.lives >
+                0 &&
+                b.lives <=
+                0
+              )
+                return -1;
+
+              if (
+                a.lives <=
+                0 &&
+                b.lives >
+                0
+              )
+                return 1;
+
+              return (
+                b.score -
+                a.score
+              );
+            },
+          );
+
+          this.server.to(
+            roomCode,
+          ).emit(
+            'finalFinished',
+            {
+              podium:
+                sorted.slice(
+                  0,
+                  3,
+                ),
+
+              leaderboard:
+                sorted,
+            },
+          );
+
+          return;
+        }
+
+        room.currentQuestion =
+          question;
+
+        room.questionActive =
+          true;
+
+        room.players.forEach(
+          (
+            player: any,
+          ) => {
+            player.hasAnswered =
+              false;
+
+            player.selectedAnswer =
+              null;
+          },
+        );
+
+        this.server.to(
+          roomCode,
+        ).emit(
+          'finalQuestionStarted',
+          {
+            ...question,
+
+            index:
+              room.finalQuestionIndex +
+              1,
+
+            total: 5,
+          },
+        );
+
+        let timeLeft = 10;
+
+        this.server.to(
+          roomCode,
+        ).emit(
+          'timerUpdate',
+          {
+            timeLeft,
+          },
+        );
+
+        const timer =
+          setInterval(() => {
+            timeLeft--;
+
+            this.server.to(
+              roomCode,
+            ).emit(
+              'timerUpdate',
+              {
+                timeLeft,
+              },
+            );
+
+            if (
+              timeLeft <=
+              0
+            ) {
+              clearInterval(
+                timer,
+              );
+
+              room.questionActive =
+                false;
+
+              room.players.forEach(
+                (
+                  player: any,
+                ) => {
+                  const correct =
+                    player.selectedAnswer ===
+                    question.correct;
+
+                  if (
+                    correct
+                  ) {
+                    player.score +=
+                      250;
+                  }
+                },
+              );
+
+              this.server.to(
+                roomCode,
+              ).emit(
+                'questionEnded',
+                {
+                  correct:
+                    question.correct,
+                },
+              );
+
+              this.emitPlayers(
+                roomCode,
+              );
+
+              room.finalQuestionIndex++;
+
+              setTimeout(() => {
+                askQuestion();
+              }, 3000);
+            }
+          }, 1000);
+      };
+
+    askQuestion();
+  }
+
   private startMazeGame(
     roomCode: string,
     difficulty = 'normal',
@@ -675,6 +873,12 @@ export class GameGateway {
 
       currentSurvivalQuestion:
         null,
+
+      finalActive: false,
+
+      finalQuestionIndex: 0,
+
+      finalQuestions: [],
     };
 
     client.join(
@@ -928,12 +1132,7 @@ export class GameGateway {
 
     if (!room) return;
 
-    forceRound(
-      room,
-      'final',
-    );
-
-    this.startQuestion(
+    this.startFinalGame(
       data.roomCode,
     );
   }

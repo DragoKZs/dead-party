@@ -67,6 +67,24 @@ export default function HostPage() {
     );
 
     socket.on(
+      'finalQuestionStarted',
+      () => {
+        setCurrentMode(
+          '🔥 ФИНАЛ',
+        );
+      },
+    );
+
+    socket.on(
+      'finalFinished',
+      () => {
+        setCurrentMode(
+          'ОЖИДАНИЕ',
+        );
+      },
+    );
+
+    socket.on(
       'questionStarted',
       (data) => {
         setMiniGameActive(

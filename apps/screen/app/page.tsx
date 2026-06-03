@@ -27,7 +27,9 @@ type ScreenMode =
   | 'reaction-finished'
   | 'maze'
   | 'bomb-pass'
-  | 'survival-run';
+  | 'survival-run'
+  | 'final'
+  | 'final-results';
 
 export default function ScreenPage() {
   const [mode, setMode] =
@@ -146,6 +148,20 @@ export default function ScreenPage() {
   );
 
   const [
+    finalPodium,
+    setFinalPodium,
+  ] = useState<any[]>(
+    [],
+  );
+
+  const [
+    finalLeaderboard,
+    setFinalLeaderboard,
+  ] = useState<any[]>(
+    [],
+  );
+
+  const [
     playerChoices,
     setPlayerChoices,
   ] = useState<
@@ -180,6 +196,40 @@ export default function ScreenPage() {
 
         setReactionWinner(
           null,
+        );
+      },
+    );
+
+    socket.on(
+      'finalQuestionStarted',
+      (data) => {
+        setMode('final');
+
+        setQuestion(data);
+
+        setQuestionEnded(
+          false,
+        );
+
+        setCorrectAnswer(
+          null,
+        );
+      },
+    );
+
+    socket.on(
+      'finalFinished',
+      (data) => {
+        setMode(
+          'final-results',
+        );
+
+        setFinalPodium(
+          data.podium,
+        );
+
+        setFinalLeaderboard(
+          data.leaderboard,
         );
       },
     );
@@ -1291,6 +1341,213 @@ export default function ScreenPage() {
     );
   }
 
+  if (
+    mode ===
+    'final-results'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col overflow-y-auto bg-[#120014] p-10 text-white">
+
+        <div className="mb-14 text-center text-8xl font-black text-yellow-400">
+          👑 FINAL RESULTS
+        </div>
+
+        <div className="mb-24 flex items-end justify-center gap-10">
+
+          {finalPodium[1] && (
+            <div className="flex flex-col items-center">
+              <div className="mb-5 text-6xl">
+                🥈
+              </div>
+
+              <div className="flex h-40 w-40 items-center justify-center overflow-hidden rounded-full border-8 border-gray-300 bg-black">
+                {finalPodium[1]
+                  .avatar?.startsWith(
+                    'http',
+                  ) ? (
+                  <img
+                    src={
+                      finalPodium[1]
+                        .avatar
+                    }
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="text-8xl">
+                    {
+                      finalPodium[1]
+                        .avatar
+                    }
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-5 text-4xl font-black">
+                {
+                  finalPodium[1]
+                    .name
+                }
+              </div>
+
+              <div className="mt-6 flex h-56 w-52 items-center justify-center rounded-t-[40px] bg-gray-400 text-7xl font-black">
+                2
+              </div>
+            </div>
+          )}
+
+          {finalPodium[0] && (
+            <div className="flex flex-col items-center">
+              <div className="mb-5 animate-bounce text-7xl">
+                👑
+              </div>
+
+              <div className="flex h-52 w-52 items-center justify-center overflow-hidden rounded-full border-[10px] border-yellow-400 bg-black shadow-[0_0_60px_gold]">
+                {finalPodium[0]
+                  .avatar?.startsWith(
+                    'http',
+                  ) ? (
+                  <img
+                    src={
+                      finalPodium[0]
+                        .avatar
+                    }
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="text-9xl">
+                    {
+                      finalPodium[0]
+                        .avatar
+                    }
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-5 text-5xl font-black text-yellow-400">
+                {
+                  finalPodium[0]
+                    .name
+                }
+              </div>
+
+              <div className="mt-6 flex h-72 w-60 items-center justify-center rounded-t-[40px] bg-yellow-400 text-8xl font-black text-black">
+                1
+              </div>
+            </div>
+          )}
+
+          {finalPodium[2] && (
+            <div className="flex flex-col items-center">
+              <div className="mb-5 text-6xl">
+                🥉
+              </div>
+
+              <div className="flex h-40 w-40 items-center justify-center overflow-hidden rounded-full border-8 border-orange-500 bg-black">
+                {finalPodium[2]
+                  .avatar?.startsWith(
+                    'http',
+                  ) ? (
+                  <img
+                    src={
+                      finalPodium[2]
+                        .avatar
+                    }
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="text-8xl">
+                    {
+                      finalPodium[2]
+                        .avatar
+                    }
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-5 text-4xl font-black">
+                {
+                  finalPodium[2]
+                    .name
+                }
+              </div>
+
+              <div className="mt-6 flex h-44 w-52 items-center justify-center rounded-t-[40px] bg-orange-500 text-7xl font-black">
+                3
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-5">
+          {finalLeaderboard.map(
+            (
+              player: any,
+              index: number,
+            ) => (
+              <div
+                key={
+                  player.telegramId
+                }
+                className={`flex items-center justify-between rounded-[30px] p-6
+              ${player.lives >
+                    0
+                    ? 'bg-white/10'
+                    : 'bg-red-950/40 opacity-70'
+                  }`}
+              >
+                <div className="flex items-center gap-6">
+
+                  <div className="text-4xl font-black text-yellow-400">
+                    #
+                    {index + 1}
+                  </div>
+
+                  <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-black text-5xl">
+                    {player.avatar?.startsWith(
+                      'http',
+                    ) ? (
+                      <img
+                        src={
+                          player.avatar
+                        }
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      player.avatar
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="text-3xl font-black">
+                      {
+                        player.name
+                      }
+                    </div>
+
+                    <div className="mt-2 text-2xl">
+                      {player.lives >
+                        0
+                        ? '❤️'.repeat(
+                          player.lives,
+                        )
+                        : '💀'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-4xl font-black text-cyan-400">
+                  {
+                    player.score
+                  }
+                </div>
+              </div>
+            ),
+          )}
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-black p-10 text-white">
       <div className="mb-8 flex items-center justify-between">
@@ -1305,6 +1562,14 @@ export default function ScreenPage() {
 
       {question && (
         <div>
+
+          {mode ===
+            'final' && (
+              <div className="mb-6 animate-pulse text-center text-7xl font-black text-yellow-400">
+                👑 FINAL ROUND
+              </div>
+            )}
+
           <div className="mb-10 rounded-3xl bg-gray-900 p-10 text-center text-5xl font-black">
             {question.text}
           </div>
@@ -1318,7 +1583,7 @@ export default function ScreenPage() {
                 <div
                   key={index}
                   className={`rounded-3xl p-10 text-center text-4xl font-black transition-all duration-500
-                  ${questionEnded &&
+            ${questionEnded &&
                       correctAnswer ===
                       index
                       ? 'scale-105 bg-green-600 shadow-[0_0_40px_rgba(0,255,0,0.8)]'
@@ -1416,6 +1681,6 @@ export default function ScreenPage() {
           )}
         </div>
       </div>
-    </main>
+    </main >
   );
 }

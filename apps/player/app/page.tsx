@@ -341,6 +341,24 @@ export default function Home() {
           }, 3000);
         }
 
+        socket.on(
+          'finalQuestionStarted',
+          (data) => {
+            setMode('quiz');
+
+            setQuestion(data);
+
+            setLocked(false);
+
+            setQuestionEnded(
+              false,
+            );
+
+            setCorrectAnswer(
+              null,
+            );
+          },
+        );
 
         setQuestionEnded(false);
 
