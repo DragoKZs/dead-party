@@ -1548,8 +1548,15 @@ export default function ScreenPage() {
     );
   }
 
+  const answerColors = [
+    'bg-red-600 border-red-400',
+    'bg-blue-600 border-blue-400',
+    'bg-yellow-500 border-yellow-300',
+    'bg-green-600 border-green-400',
+  ];
+
   return (
-    <main className="min-h-screen bg-black p-10 text-white">
+    <main className="min-h-screen bg-[#120014] p-10 text-white">
       <div className="mb-8 flex items-center justify-between">
         <div className="text-6xl font-black text-red-600">
           {roomCode}
@@ -1570,7 +1577,7 @@ export default function ScreenPage() {
               </div>
             )}
 
-          <div className="mb-10 rounded-3xl bg-gray-900 p-10 text-center text-5xl font-black">
+          <div className="mb-10 rounded-[40px] border-4 border-purple-500 bg-gradient-to-b from-purple-950 to-black p-10 text-center text-5xl font-black shadow-[0_0_40px_rgba(168,85,247,0.6)]">
             {question.text}
           </div>
 
@@ -1582,13 +1589,24 @@ export default function ScreenPage() {
               ) => (
                 <div
                   key={index}
-                  className={`rounded-3xl p-10 text-center text-4xl font-black transition-all duration-500
-            ${questionEnded &&
-                      correctAnswer ===
-                      index
-                      ? 'scale-105 bg-green-600 shadow-[0_0_40px_rgba(0,255,0,0.8)]'
-                      : 'bg-red-600'
-                    }`}
+                  className={`
+                  rounded-[35px]
+                  border-4
+                  p-10
+                  text-center
+                  text-4xl
+                  font-black
+                  transition-all
+                  duration-500
+
+                      ${answerColors[index]}
+
+                      ${questionEnded &&
+                      correctAnswer === index
+                      ? 'scale-105 shadow-[0_0_50px_rgba(0,255,0,0.9)]'
+                      : ''
+                    }
+                 `}
                 >
                   {answer}
                 </div>
