@@ -1557,33 +1557,57 @@ export default function ScreenPage() {
 
   return (
     <main className="min-h-screen bg-[#120014] p-10 text-white">
-      <div className="mb-8 flex items-center justify-between">
-        <div className="text-6xl font-black text-red-600">
-          {roomCode}
+      <div className="mb-10 grid grid-cols-4 gap-5">
+
+        <div className="rounded-[30px] border border-purple-500/40 bg-black/40 p-5 text-center backdrop-blur">
+          <div className="text-lg text-purple-300">
+            КОМНАТА
+          </div>
+
+          <div className="text-4xl font-black text-red-500">
+            {roomCode}
+          </div>
         </div>
 
-        <div className="flex flex-col items-center">
+        <div className="rounded-[30px] border border-cyan-500/40 bg-black/40 p-5 text-center backdrop-blur">
+          <div className="text-lg text-cyan-300">
+            ИГРОКОВ
+          </div>
+
+          <div className="text-4xl font-black text-cyan-400">
+            {players.length}
+          </div>
+        </div>
+
+        <div className="rounded-[30px] border border-red-500/40 bg-black/40 p-5 text-center backdrop-blur">
+          <div className="text-lg text-red-300">
+            ЖИВЫХ
+          </div>
+
+          <div className="text-4xl font-black text-red-400">
+            {
+              players.filter(
+                (p) => p.lives > 0,
+              ).length
+            }
+          </div>
+        </div>
+
+        <div className="rounded-[30px] border border-yellow-500/40 bg-black/40 p-5 text-center backdrop-blur">
+          <div className="text-lg text-yellow-300">
+            ТАЙМЕР
+          </div>
+
           <div
-            className={`text-8xl font-black ${mode === 'final'
-                ? 'animate-pulse text-yellow-400'
-                : 'text-cyan-400'
+            className={`text-5xl font-black ${mode === 'final'
+              ? 'animate-pulse text-yellow-400'
+              : 'text-yellow-400'
               }`}
           >
             {timeLeft}
           </div>
-
-          <div className="mt-4 h-4 w-[350px] overflow-hidden rounded-full bg-white/10">
-            <div
-              className="h-full bg-cyan-400 transition-all duration-1000"
-              style={{
-                width: `${Math.min(
-                  timeLeft * 10,
-                  100,
-                )}%`,
-              }}
-            />
-          </div>
         </div>
+
       </div>
 
       {question && (
@@ -1647,71 +1671,61 @@ export default function ScreenPage() {
               index,
             ) => (
               <div
-                key={
-                  player.id
-                }
-                className={`flex items-center justify-between rounded-3xl p-6 text-3xl font-black
-                ${player.lives <= 0
-                    ? 'border border-red-500/20 bg-red-950/20 opacity-40'
-                    : index ===
-                      0
-                      ? 'border-2 border-yellow-400 bg-yellow-500/10'
-                      : 'bg-black/50 border border-purple-500/30'
+                key={player.id}
+                className={`rounded-[35px] p-6
+  ${player.lives <= 0
+                    ? 'border border-red-500/20 bg-red-950/20 opacity-50'
+                    : index === 0
+                      ? 'border-2 border-yellow-400 bg-yellow-500/10 shadow-[0_0_30px_rgba(255,215,0,0.4)]'
+                      : 'border border-purple-500/30 bg-black/50'
                   }`}
               >
-                <div className="flex items-center gap-5">
-                  <div className="text-4xl">
-                    #
-                    {index +
-                      1}
-                  </div>
+                <div className="flex items-center justify-between">
 
-                  {player.avatar?.startsWith(
-                    'http',
-                  ) ? (
-                    <img
-                      src={
-                        player.avatar
-                      }
-                      alt="avatar"
-                      className="h-16 w-16 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-5xl">
-                      {
-                        player.avatar
-                      }
+                  <div className="flex items-center gap-6">
+
+                    <div className="text-5xl font-black text-yellow-400">
+                      #{index + 1}
                     </div>
-                  )}
 
-                  <div>
-                    {
-                      player.name
-                    }
-                  </div>
-                </div>
+                    {player.avatar?.startsWith('http') ? (
+                      <img
+                        src={player.avatar}
+                        alt="avatar"
+                        className="h-20 w-20 rounded-full border-4 border-purple-500 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-purple-500 bg-black text-5xl">
+                        {player.avatar}
+                      </div>
+                    )}
 
-                <div className="flex gap-8">
-                  <div>
-                    ❤️{' '}
-                    {
-                      player.lives
-                    }
+                    <div>
+                      <div className="text-3xl font-black">
+                        {player.name}
+                      </div>
+
+                      <div className="mt-2 text-xl text-gray-300">
+                        {player.lives > 0
+                          ? '❤️'.repeat(player.lives)
+                          : '💀 ВЫБЫЛ'}
+                      </div>
+                    </div>
+
                   </div>
 
-                  <div>
-                    🏆{' '}
-                    {
-                      player.score
-                    }
+                  <div className="text-right">
+
+                    <div className="text-4xl font-black text-cyan-400">
+                      {player.score}
+                    </div>
+
+                    <div className="mt-2 text-xl text-orange-400">
+                      🔥 {player.bestStreak || 0}
+                    </div>
+
                   </div>
 
-                  <div>
-                    🔥{' '}
-                    {
-                      player.bestStreak
-                    }
-                  </div>
                 </div>
               </div>
             ),
