@@ -245,6 +245,8 @@ export class GameGateway {
       {
         ...randomQuestion,
 
+        roundType,
+
         isSpeedRound:
           room.isSpeedRound,
 
