@@ -37,6 +37,13 @@ export default function ScreenPage() {
       'idle',
     );
 
+  const [
+    roundBanner,
+    setRoundBanner,
+  ] = useState<
+    string | null
+  >(null);
+
   const [roomCode, setRoomCode] =
     useState('');
 
@@ -185,6 +192,22 @@ export default function ScreenPage() {
       'questionStarted',
       (data) => {
         setMode('quiz');
+
+        if (
+          data.roundType &&
+          data.roundType !==
+          'normal'
+        ) {
+          setRoundBanner(
+            data.roundType,
+          );
+
+          setTimeout(() => {
+            setRoundBanner(
+              null,
+            );
+          }, 2000);
+        }
 
         setQuestion(data);
 
@@ -1138,6 +1161,56 @@ export default function ScreenPage() {
             +150 ОЧКОВ
           </div>
         </div>
+      </main>
+    );
+  }
+
+  if (
+    roundBanner
+  ) {
+    const banners = {
+      speed: {
+        icon: '⚡',
+        text: 'SPEED ROUND',
+        color:
+          'text-yellow-400',
+      },
+
+      blackout: {
+        icon: '🌑',
+        text:
+          'BLACKOUT ROUND',
+        color:
+          'text-purple-400',
+      },
+
+      'last-chance': {
+        icon: '☠',
+        text:
+          'LAST CHANCE',
+        color:
+          'text-red-500',
+      },
+    };
+
+    const banner =
+      banners[
+      roundBanner as keyof typeof banners
+      ];
+
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-[#120014] text-white">
+
+        <div className="animate-bounce text-[220px]">
+          {banner.icon}
+        </div>
+
+        <div
+          className={`animate-pulse text-center text-[120px] font-black ${banner.color}`}
+        >
+          {banner.text}
+        </div>
+
       </main>
     );
   }
