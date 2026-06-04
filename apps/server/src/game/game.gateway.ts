@@ -239,6 +239,7 @@ export class GameGateway {
           null;
       },
     );
+    
 
     if (
       roundType !==
@@ -254,6 +255,8 @@ export class GameGateway {
       );
 
       setTimeout(() => {
+        room.timeleft += 2;
+
         this.server
           .to(roomCode)
           .emit(

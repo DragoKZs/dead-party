@@ -11,6 +11,7 @@ import { io } from 'socket.io-client';
 import {
   motion,
 } from 'framer-motion';
+import { setRequestMeta } from 'next/dist/server/request-meta';
 
 const socket = io(
   'https://dead-party-server.onrender.com',
@@ -203,22 +204,6 @@ export default function ScreenPage() {
       'questionStarted',
       (data) => {
         setMode('quiz');
-
-        if (
-          data.roundType &&
-          data.roundType !==
-          'normal'
-        ) {
-          setRoundBanner(
-            data.roundType,
-          );
-
-          setTimeout(() => {
-            setRoundBanner(
-              null,
-            );
-          }, 2000);
-        }
 
         setRoundBanner(
           null,
