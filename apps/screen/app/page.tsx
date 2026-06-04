@@ -1562,8 +1562,27 @@ export default function ScreenPage() {
           {roomCode}
         </div>
 
-        <div className="text-8xl font-black text-yellow-400">
-          {timeLeft}
+        <div className="flex flex-col items-center">
+          <div
+            className={`text-8xl font-black ${mode === 'final'
+                ? 'animate-pulse text-yellow-400'
+                : 'text-cyan-400'
+              }`}
+          >
+            {timeLeft}
+          </div>
+
+          <div className="mt-4 h-4 w-[350px] overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full bg-cyan-400 transition-all duration-1000"
+              style={{
+                width: `${Math.min(
+                  timeLeft * 10,
+                  100,
+                )}%`,
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -1633,11 +1652,11 @@ export default function ScreenPage() {
                 }
                 className={`flex items-center justify-between rounded-3xl p-6 text-3xl font-black
                 ${player.lives <= 0
-                    ? 'bg-gray-900 opacity-30'
+                    ? 'border border-red-500/20 bg-red-950/20 opacity-40'
                     : index ===
                       0
                       ? 'border-2 border-yellow-400 bg-yellow-500/10'
-                      : 'bg-gray-800'
+                      : 'bg-black/50 border border-purple-500/30'
                   }`}
               >
                 <div className="flex items-center gap-5">
