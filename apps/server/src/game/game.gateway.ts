@@ -240,26 +240,67 @@ export class GameGateway {
       },
     );
 
-    this.server.to(roomCode).emit(
-      'questionStarted',
-      {
-        ...randomQuestion,
+    if (
+      roundType !==
+      'normal'
+    ) {
+      this.server.to(
+        roomCode,
+      ).emit(
+        'roundAnnouncement',
+        {
+          roundType,
+        },
+      );
 
-        roundType,
+      setTimeout(() => {
+        this.server
+          .to(roomCode)
+          .emit(
+            'questionStarted',
+            {
+              ...randomQuestion,
 
-        isSpeedRound:
-          room.isSpeedRound,
+              roundType,
 
-        isBlackoutRound:
-          room.isBlackoutRound,
+              isSpeedRound:
+                room.isSpeedRound,
 
-        isLastChanceRound:
-          room.isLastChanceRound,
+              isBlackoutRound:
+                room.isBlackoutRound,
 
-        isFinalRound:
-          room.isFinalRound,
-      },
-    );
+              isLastChanceRound:
+                room.isLastChanceRound,
+
+              isFinalRound:
+                room.isFinalRound,
+            },
+          );
+      }, 2000);
+    } else {
+      this.server.to(
+        roomCode,
+      ).emit(
+        'questionStarted',
+        {
+          ...randomQuestion,
+
+          roundType,
+
+          isSpeedRound:
+            room.isSpeedRound,
+
+          isBlackoutRound:
+            room.isBlackoutRound,
+
+          isLastChanceRound:
+            room.isLastChanceRound,
+
+          isFinalRound:
+            room.isFinalRound,
+        },
+      );
+    }
 
     this.server.to(roomCode).emit(
       'timerUpdate',

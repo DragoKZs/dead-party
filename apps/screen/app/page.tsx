@@ -44,6 +44,8 @@ export default function ScreenPage() {
     string | null
   >(null);
 
+
+
   const [roomCode, setRoomCode] =
     useState('');
 
@@ -189,6 +191,15 @@ export default function ScreenPage() {
     );
 
     socket.on(
+      'roundAnnouncement',
+      (data) => {
+        setRoundBanner(
+          data.roundType,
+        );
+      },
+    );
+
+    socket.on(
       'questionStarted',
       (data) => {
         setMode('quiz');
@@ -208,6 +219,10 @@ export default function ScreenPage() {
             );
           }, 2000);
         }
+
+        setRoundBanner(
+          null,
+        );
 
         setQuestion(data);
 
@@ -509,6 +524,10 @@ export default function ScreenPage() {
 
       socket.off(
         'questionStarted',
+      );
+
+      socket.off(
+        'roundAnnouncement',
       );
 
       socket.off(
