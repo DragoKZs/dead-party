@@ -239,7 +239,137 @@ export class GameGateway {
           null;
       },
     );
-    
+
+    const startTimer = () => {
+      this.server.to(roomCode).emit(
+        'timerUpdate',
+        {
+          timeLeft:
+            room.timeLeft,
+        },
+      );
+
+      room.timer =
+        setInterval(() => {
+          if (
+            room.paused
+          )
+            return;
+
+          room.timeLeft--;
+
+          this.server.to(
+            roomCode,
+          ).emit(
+            'timerUpdate',
+            {
+              timeLeft:
+                room.timeLeft,
+            },
+          );
+
+          const everyoneAnswered =
+            room.players.every(
+              (p: any) =>
+                p.hasAnswered,
+            );
+
+          if (
+            everyoneAnswered
+          ) {
+            room.timeLeft = 0;
+          }
+        if (
+          room.timeLeft <=
+          0
+        ) {
+          clearInterval(
+            room.timer,
+          );
+
+          room.questionActive =
+            false;
+
+          room.players.forEach(
+            (
+              player: any,
+            ) => {
+              const correct =
+                player.selectedAnswer ===
+                room
+                  .currentQuestion
+                  .correct;
+
+              if (
+                correct
+              ) {
+
+                if (
+                  room.isLastChanceRound
+                ) {
+                  if (
+                    player.lives <= 0
+                  ) {
+                    player.lives = 1;
+
+                    player.eliminated =
+                      false;
+                  } else if (
+                    player.lives < 3
+                  ) {
+                    player.lives++;
+                  } else {
+                    player.score += 50;
+                  }
+                } else {
+                  player.score +=
+                    room.isFinalRound
+                      ? 300
+                      : room.isSpeedRound
+                        ? 200
+                        : 100;
+                }
+
+                player.streak++;
+
+                if (
+                  player.streak >
+                  player.bestStreak
+                ) {
+                  player.bestStreak =
+                    player.streak;
+                }
+              } else {
+                player.streak = 0;
+
+                player.lives =
+                  Math.max(
+                    0,
+                    player.lives - 1,
+                  );
+
+              }
+            },
+          );
+
+          this.server.to(
+            roomCode,
+          ).emit(
+            'questionEnded',
+            {
+              correct:
+                room
+                  .currentQuestion
+                  .correct,
+            },
+          );
+
+          this.emitPlayers(
+            roomCode,
+          );
+        }
+        }, 1000);
+    };
 
     if (
       roundType !==
@@ -255,8 +385,6 @@ export class GameGateway {
       );
 
       setTimeout(() => {
-        room.timeleft += 2;
-
         this.server
           .to(roomCode)
           .emit(
@@ -279,6 +407,8 @@ export class GameGateway {
                 room.isFinalRound,
             },
           );
+
+      startTimer();
       }, 2000);
     } else {
       this.server.to(
@@ -303,6 +433,7 @@ export class GameGateway {
             room.isFinalRound,
         },
       );
+      startTimer();
     }
 
     this.server.to(roomCode).emit(
