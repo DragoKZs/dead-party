@@ -6,10 +6,13 @@ import {
   useState,
 } from 'react';
 
+
+
 import { io } from 'socket.io-client';
 
 import {
   motion,
+  AnimatePresence,
 } from 'framer-motion';
 import { setRequestMeta } from 'next/dist/server/request-meta';
 
@@ -1203,17 +1206,69 @@ export default function ScreenPage() {
       ];
 
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center bg-[#120014] text-white">
+      <main className="flex min-h-screen items-center justify-center bg-[#120014] overflow-hidden">
 
-        <div className="animate-bounce text-[220px]">
-          {banner.icon}
-        </div>
-
-        <div
-          className={`animate-pulse text-center text-[120px] font-black ${banner.color}`}
+        <motion.div
+          initial={{
+            scale: 0.5,
+            opacity: 0,
+          }}
+          animate={{
+            scale: 1,
+            opacity: 1,
+          }}
+          exit={{
+            scale: 1.5,
+            opacity: 0,
+          }}
+          transition={{
+            duration: 0.6,
+          }}
+          className="text-center"
         >
-          {banner.text}
-        </div>
+
+          <motion.div
+            animate={{
+              scale: [1, 1.2, 1],
+            }}
+            transition={{
+              repeat:
+                Infinity,
+              duration: 1,
+            }}
+            className="text-[220px]"
+          >
+            {banner.icon}
+          </motion.div>
+
+          <motion.div
+            initial={{
+              y: 100,
+              opacity: 0,
+            }}
+            animate={{
+              y: 0,
+              opacity: 1,
+            }}
+            className={`text-[110px] font-black ${banner.color}`}
+          >
+            {banner.text}
+          </motion.div>
+
+          <motion.div
+            initial={{
+              scaleX: 0,
+            }}
+            animate={{
+              scaleX: 1,
+            }}
+            transition={{
+              duration: 1,
+            }}
+            className="mx-auto mt-8 h-2 w-[700px] bg-white/40"
+          />
+
+        </motion.div>
 
       </main>
     );
