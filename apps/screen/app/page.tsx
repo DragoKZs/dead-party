@@ -844,20 +844,20 @@ export default function ScreenPage() {
 
                         initial={{
                           x: 0,
-                          y: 0,
+                          y: 250,
                           scale: 0.7,
                         }}
 
                         animate={{
-                          x: -250 +
-                            index * 90,
+                          x: -350 +
+                            index * 100,
 
                           y:
-                            eliminatedPlayers.includes(
-                              player.telegramId,
-                            )
-                              ? 500
-                              : 0,
+                          eliminatedPlayers.includes(
+                            player.telegramId,
+                          )
+                            ? 500
+                            : 0,
 
                           opacity:
                             eliminatedPlayers.includes(
@@ -875,7 +875,9 @@ export default function ScreenPage() {
                         }}
 
                         transition={{
-                          duration: 0.8,
+                          duration: 1.2,
+                          type: 'spring',
+                          bounce: 0.3,
                         }}
                         className={`flex flex-col items-center transition-all duration-700
                         ${eliminatedPlayers.includes(
@@ -886,7 +888,16 @@ export default function ScreenPage() {
                           }`}
                       >
 
-                        <div className="relative flex flex-col items-center">
+                        <motion.div
+                          className="relative flex flex-col items-center"
+                          animate={{
+                            y: [0, -6, 0],
+                          }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 0.4,
+                          }}
+                        >
                           <div className="mb-3 text-center text-lg font-black text-white drop-shadow-lg">
                             {player.name}
                           </div>
@@ -930,7 +941,7 @@ export default function ScreenPage() {
                             <div className="h-4 w-8 rounded-full bg-black" />
                           </div>
 
-                        </div>
+                        </motion.div>
                       </motion.div>
                     ),
                   )}
@@ -966,13 +977,13 @@ export default function ScreenPage() {
 
                         initial={{
                           x: 0,
-                          y: 0,
+                          y: 250,
                           scale: 0.7,
                         }}
 
                         animate={{
-                          x: 250 -
-                            index * 90,
+                          x: 350 -
+                            index * 100,
 
                           y:
                             eliminatedPlayers.includes(
