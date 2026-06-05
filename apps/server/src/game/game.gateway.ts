@@ -436,10 +436,10 @@ export class GameGateway {
       startTimer();
     }
   }
-  
+
   private startReactionGame(
-      roomCode: string,
-    ) {
+    roomCode: string,
+  ) {
     const room =
       this.getRoom(roomCode);
 
@@ -1179,9 +1179,17 @@ export class GameGateway {
 
     if (!room) return;
 
-    this.startFinalGame(
-      data.roomCode,
-    );
+    this.server
+      .to(data.roomCode)
+      .emit(
+        'finalAnnouncement',
+      );
+
+    setTimeout(() => {
+      this.startFinalGame(
+        data.roomCode,
+      );
+    }, 3000);
   }
 
   @SubscribeMessage(

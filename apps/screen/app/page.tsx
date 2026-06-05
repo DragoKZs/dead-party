@@ -168,6 +168,11 @@ export default function ScreenPage() {
   );
 
   const [
+    finalBanner,
+    setFinalBanner,
+  ] = useState(false);
+
+  const [
     finalLeaderboard,
     setFinalLeaderboard,
   ] = useState<any[]>(
@@ -195,6 +200,15 @@ export default function ScreenPage() {
     );
 
     socket.on(
+      'finalAnnouncement',
+      () => {
+        setFinalBanner(
+          true,
+        );
+      },
+    );
+
+    socket.on(
       'roundAnnouncement',
       (data) => {
         setRoundBanner(
@@ -210,6 +224,10 @@ export default function ScreenPage() {
 
         setRoundBanner(
           null,
+        );
+
+        setFinalBanner(
+          false,
         );
 
         setQuestion(data);
@@ -232,6 +250,10 @@ export default function ScreenPage() {
         setMode('final');
 
         setQuestion(data);
+
+        setFinalBanner(
+          false,
+        );
 
         setQuestionEnded(
           false,
@@ -1173,30 +1195,78 @@ export default function ScreenPage() {
   }
 
   if (
+    finalBanner
+  ) {
+    return (
+      <main className="flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-b from-yellow-900 via-black to-black">
+
+        <motion.div
+          initial={{
+            scale: 0.4,
+            opacity: 0,
+          }}
+          animate={{
+            scale: 1,
+            opacity: 1,
+          }}
+          className="text-center"
+        >
+
+          <motion.div
+            animate={{
+              y: [0, -20, 0],
+            }}
+            transition={{
+              repeat:
+                Infinity,
+              duration: 1.5,
+            }}
+            className="text-[220px]"
+          >
+            👑
+          </motion.div>
+
+          <div className="text-[120px] font-black text-yellow-400">
+            FINAL ROUND
+          </div>
+
+          <div className="mt-8 text-5xl font-black text-white">
+            5 ВОПРОСОВ
+          </div>
+
+          <div className="mt-4 text-5xl font-black text-cyan-400">
+            ПО 250 ОЧКОВ
+          </div>
+
+        </motion.div>
+
+      </main>
+    );
+  }
+
+  if (
     roundBanner
   ) {
     const banners = {
       speed: {
         icon: '⚡',
         text: 'SPEED ROUND',
-        color:
-          'text-yellow-400',
+        color: 'text-yellow-400',
+        bg: 'from-yellow-900 via-black to-yellow-950',
       },
 
       blackout: {
         icon: '🌑',
-        text:
-          'BLACKOUT ROUND',
-        color:
-          'text-purple-400',
+        text: 'BLACKOUT ROUND',
+        color: 'text-purple-400',
+        bg: 'from-purple-950 via-black to-black',
       },
 
       'last-chance': {
         icon: '☠',
-        text:
-          'LAST CHANCE',
-        color:
-          'text-red-500',
+        text: 'LAST CHANCE',
+        color: 'text-red-500',
+        bg: 'from-red-950 via-black to-red-950',
       },
     };
 
@@ -1205,8 +1275,29 @@ export default function ScreenPage() {
       roundBanner as keyof typeof banners
       ];
 
+    const isDanger =
+      roundBanner ===
+      'last-chance';
+
+    const isBlackout =
+      roundBanner ===
+      'blackout';
+
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#120014] overflow-hidden">
+      <motion.main
+        animate={
+          isBlackout
+            ? {
+              opacity: [1, 0.4, 1, 0.7, 1],
+            }
+            : {}
+        }
+        transition={{
+          repeat: Infinity,
+          duration: 0.8,
+        }}
+        className={`flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br ${banner.bg}`}
+      >
 
         <motion.div
           initial={{
@@ -1241,17 +1332,71 @@ export default function ScreenPage() {
             {banner.icon}
           </motion.div>
 
+          {roundBanner ===
+            'speed' && (
+              <>
+                <motion.div
+                  animate={{
+                    x: [
+                      -800,
+                      800,
+                    ],
+                    opacity: [
+                      0,
+                      1,
+                      0,
+                    ],
+                  }}
+                  transition={{
+                    repeat:
+                      Infinity,
+                    duration: 1,
+                  }}
+                  className="absolute top-24 text-[120px] text-yellow-400"
+                >
+                  ⚡
+                </motion.div>
+
+                <motion.div
+                  animate={{
+                    x: [
+                      800,
+                      -800,
+                    ],
+                    opacity: [
+                      0,
+                      1,
+                      0,
+                    ],
+                  }}
+                  transition={{
+                    repeat:
+                      Infinity,
+                    duration: 1.2,
+                  }}
+                  className="absolute bottom-24 text-[120px] text-yellow-400"
+                >
+                  ⚡
+                </motion.div>
+              </>
+            )}
+
           <motion.div
             initial={{
-              y: 100,
+              scale: 0.5,
               opacity: 0,
             }}
             animate={{
+              scale: isDanger ? [1, 1.03, 1] : 1,
               y: 0,
               opacity: 1,
             }}
-            className={`text-[110px] font-black ${banner.color}`}
+            transition={{
+              repeat: Infinity,
+              duration: 0.7,
+            }}
           >
+            className={`text-[110px] font-black ${banner.color}`}
             {banner.text}
           </motion.div>
 
@@ -1270,7 +1415,7 @@ export default function ScreenPage() {
 
         </motion.div>
 
-      </main>
+      </motion.main>
     );
   }
 
@@ -1299,7 +1444,7 @@ export default function ScreenPage() {
               ${mazeTimer <= 10
                   ? 'animate-pulse text-red-500'
                   : 'text-yellow-400'
-                }`}
+                } `}
             >
               {mazeTimer}
             </div>
@@ -1363,7 +1508,7 @@ export default function ScreenPage() {
                       index,
                     ) => (
                       <div
-                        key={`${player.name}-${index}`}
+                        key={`${player.name} -${index} `}
                         className="flex items-center justify-between rounded-2xl bg-black p-5"
                       >
                         <div className="flex items-center gap-4">
@@ -1417,12 +1562,12 @@ export default function ScreenPage() {
                       key={
                         player.id
                       }
-                      className={`flex items-center justify-between rounded-2xl p-5
+                      className={`flex items-center justify-between rounded - 2xl p - 5
                       ${index ===
                           0
                           ? 'border border-yellow-400 bg-yellow-500/10'
                           : 'bg-black'
-                        }`}
+                        } `}
                     >
                       <div className="flex items-center gap-4">
                         <div className="text-3xl font-black">
@@ -1620,12 +1765,12 @@ export default function ScreenPage() {
                 key={
                   player.telegramId
                 }
-                className={`flex items-center justify-between rounded-[30px] p-6
+                className={`flex items - center justify - between rounded - [30px] p - 6
               ${player.lives >
                     0
                     ? 'bg-white/10'
                     : 'bg-red-950/40 opacity-70'
-                  }`}
+                  } `}
               >
                 <div className="flex items-center gap-6">
 
@@ -1731,10 +1876,10 @@ export default function ScreenPage() {
           </div>
 
           <div
-            className={`text-5xl font-black ${mode === 'final'
+            className={`text - 5xl font - black ${mode === 'final'
               ? 'animate-pulse text-yellow-400'
               : 'text-yellow-400'
-              }`}
+              } `}
           >
             {timeLeft}
           </div>
@@ -1765,14 +1910,14 @@ export default function ScreenPage() {
                 <div
                   key={index}
                   className={`
-                  rounded-[35px]
-                  border-4
-                  p-10
-                  text-center
-                  text-4xl
-                  font-black
-                  transition-all
-                  duration-500
+    rounded - [35px]
+    border - 4
+    p - 10
+    text - center
+    text - 4xl
+    font - black
+    transition - all
+    duration - 500
 
                       ${answerColors[index]}
 
@@ -1781,7 +1926,7 @@ export default function ScreenPage() {
                       ? 'scale-105 shadow-[0_0_50px_rgba(0,255,0,0.9)]'
                       : ''
                     }
-                 `}
+    `}
                 >
                   {answer}
                 </div>
@@ -1804,13 +1949,13 @@ export default function ScreenPage() {
             ) => (
               <div
                 key={player.id}
-                className={`rounded-[35px] p-6
+                className={`rounded-[35px] p - 6
   ${player.lives <= 0
                     ? 'border border-red-500/20 bg-red-950/20 opacity-50'
                     : index === 0
                       ? 'border-2 border-yellow-400 bg-yellow-500/10 shadow-[0_0_30px_rgba(255,215,0,0.4)]'
                       : 'border border-purple-500/30 bg-black/50'
-                  }`}
+                  } `}
               >
                 <div className="flex items-center justify-between">
 
