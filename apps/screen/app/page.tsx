@@ -887,6 +887,9 @@ export default function ScreenPage() {
                       >
 
                         <div className="relative flex flex-col items-center">
+                          <div className="mb-3 text-center text-lg font-black text-white drop-shadow-lg">
+                            {player.name}
+                          </div>
 
                           {player.avatar?.startsWith(
                             'http',
@@ -1006,6 +1009,9 @@ export default function ScreenPage() {
                       >
 
                         <div className="relative flex flex-col items-center">
+                          <div className="mb-3 text-center text-lg font-black text-white drop-shadow-lg">
+                            {player.name}
+                          </div>
 
                           {player.avatar?.startsWith(
                             'http',
