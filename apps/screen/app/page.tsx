@@ -952,35 +952,6 @@ export default function ScreenPage() {
                           </div>
 
                         </div>
-
-                        <div className="relative flex flex-col items-center">
-
-                          {/* Шея */}
-                          <div className="h-3 w-4 rounded-full bg-[#f3c7a5]" />
-
-                          {/* Тело */}
-                          <div className="relative h-24 w-20 rounded-t-[30px] rounded-b-[20px] bg-gradient-to-b from-red-400 to-red-700">
-
-                            {/* Руки */}
-                            <div className="absolute left-[-18px] top-5 h-14 w-4 rotate-45 rounded-full bg-[#f3c7a5]" />
-
-                            <div className="absolute right-[-18px] top-5 h-14 w-4 -rotate-45 rounded-full bg-[#f3c7a5]" />
-
-                          </div>
-
-                          {/* Ноги */}
-                          <div className="mt-[-6px] flex gap-6">
-                            <div className="h-16 w-5 rounded-full bg-blue-700" />
-                            <div className="h-16 w-5 rounded-full bg-blue-700" />
-                          </div>
-
-                          {/* Обувь */}
-                          <div className="mt-[-4px] flex gap-4">
-                            <div className="h-4 w-8 rounded-full bg-black" />
-                            <div className="h-4 w-8 rounded-full bg-black" />
-                          </div>
-
-                        </div>
                       </motion.div>
                     ),
                   )}
@@ -1118,35 +1089,6 @@ export default function ScreenPage() {
                             <div className="h-16 w-5 rounded-full bg-blue-700" />
                           </div>
 
-                          <div className="mt-[-4px] flex gap-4">
-                            <div className="h-4 w-8 rounded-full bg-black" />
-                            <div className="h-4 w-8 rounded-full bg-black" />
-                          </div>
-
-                        </div>
-
-                        <div className="relative flex flex-col items-center">
-
-                          {/* Шея */}
-                          <div className="h-3 w-4 rounded-full bg-[#f3c7a5]" />
-
-                          {/* Тело */}
-                          <div className="relative h-24 w-20 rounded-t-[30px] rounded-b-[20px] bg-gradient-to-b from-red-400 to-red-700">
-
-                            {/* Руки */}
-                            <div className="absolute left-[-18px] top-5 h-14 w-4 rotate-45 rounded-full bg-[#f3c7a5]" />
-
-                            <div className="absolute right-[-18px] top-5 h-14 w-4 -rotate-45 rounded-full bg-[#f3c7a5]" />
-
-                          </div>
-
-                          {/* Ноги */}
-                          <div className="mt-[-6px] flex gap-6">
-                            <div className="h-16 w-5 rounded-full bg-blue-700" />
-                            <div className="h-16 w-5 rounded-full bg-blue-700" />
-                          </div>
-
-                          {/* Обувь */}
                           <div className="mt-[-4px] flex gap-4">
                             <div className="h-4 w-8 rounded-full bg-black" />
                             <div className="h-4 w-8 rounded-full bg-black" />
