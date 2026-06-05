@@ -885,30 +885,6 @@ export default function ScreenPage() {
                             : ''
                           }`}
                       >
-                        {player.avatar?.startsWith(
-                          'http',
-                        ) ||
-                          player.avatar?.startsWith(
-                            'data:image',
-                          ) ? (
-                          <img
-                            src={
-                              player.avatar
-                            }
-                            alt="avatar"
-                            className="h-24 w-24 rounded-full border-4 border-white object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-black text-5xl">
-                            {
-                              player.avatar
-                            }
-                          </div>
-                        )}
-
-                        <div className="mb-2 text-center text-2xl font-black">
-                          {player.name}
-                        </div>
 
                         <div className="relative flex flex-col items-center">
 
@@ -1028,30 +1004,6 @@ export default function ScreenPage() {
                             : ''
                           }`}
                       >
-                        {player.avatar?.startsWith(
-                          'http',
-                        ) ||
-                          player.avatar?.startsWith(
-                            'data:image',
-                          ) ? (
-                          <img
-                            src={
-                              player.avatar
-                            }
-                            alt="avatar"
-                            className="h-24 w-24 rounded-full border-4 border-white object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-black text-5xl">
-                            {
-                              player.avatar
-                            }
-                          </div>
-                        )}
-
-                        <div className="mb-2 text-center text-2xl font-black">
-                          {player.name}
-                        </div>
 
                         <div className="relative flex flex-col items-center">
 
