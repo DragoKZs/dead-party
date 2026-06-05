@@ -906,13 +906,52 @@ export default function ScreenPage() {
                           </div>
                         )}
 
-                        <div className="mt-3 text-2xl font-black">
-                          {
-                            player.name
-                          }
+                        <div className="mb-2 text-center text-2xl font-black">
+                          {player.name}
                         </div>
 
-                        <div className="absolute bottom-0 h-6 w-24 rounded-full bg-black/50 blur-md" />
+                        <div className="relative flex flex-col items-center">
+
+                          {player.avatar?.startsWith(
+                            'http',
+                          ) ||
+                            player.avatar?.startsWith(
+                              'data:image',
+                            ) ? (
+                            <img
+                              src={player.avatar}
+                              alt="avatar"
+                              className="relative z-20 h-24 w-24 rounded-full border-4 border-white object-cover"
+                            />
+                          ) : (
+                            <div className="relative z-20 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-black text-5xl">
+                              {player.avatar}
+                            </div>
+                          )}
+
+                          <div className="h-3 w-4 rounded-full bg-[#f3c7a5]" />
+
+                          <div className="absolute bottom-0 h-6 w-24 rounded-full bg-black/50 blur-md" />
+
+                          <div className="relative h-24 w-20 rounded-t-[30px] rounded-b-[20px] bg-gradient-to-b from-red-400 to-red-700">
+
+                            <div className="absolute left-[-18px] top-5 h-14 w-4 rotate-45 rounded-full bg-[#f3c7a5]" />
+
+                            <div className="absolute right-[-18px] top-5 h-14 w-4 -rotate-45 rounded-full bg-[#f3c7a5]" />
+
+                          </div>
+
+                          <div className="mt-[-6px] flex gap-6">
+                            <div className="h-16 w-5 rounded-full bg-blue-700" />
+                            <div className="h-16 w-5 rounded-full bg-blue-700" />
+                          </div>
+
+                          <div className="mt-[-4px] flex gap-4">
+                            <div className="h-4 w-8 rounded-full bg-black" />
+                            <div className="h-4 w-8 rounded-full bg-black" />
+                          </div>
+
+                        </div>
 
                         <div className="relative flex flex-col items-center">
 
@@ -1039,13 +1078,52 @@ export default function ScreenPage() {
                           </div>
                         )}
 
-                        <div className="mt-3 text-2xl font-black">
-                          {
-                            player.name
-                          }
+                        <div className="mb-2 text-center text-2xl font-black">
+                          {player.name}
                         </div>
 
-                        <div className="absolute bottom-0 h-6 w-24 rounded-full bg-black/50 blur-md" />
+                        <div className="relative flex flex-col items-center">
+
+                          {player.avatar?.startsWith(
+                            'http',
+                          ) ||
+                            player.avatar?.startsWith(
+                              'data:image',
+                            ) ? (
+                            <img
+                              src={player.avatar}
+                              alt="avatar"
+                              className="relative z-20 h-24 w-24 rounded-full border-4 border-white object-cover"
+                            />
+                          ) : (
+                            <div className="relative z-20 flex h-24 w-24 items-center justify-center rounded-full border-4 border-white bg-black text-5xl">
+                              {player.avatar}
+                            </div>
+                          )}
+
+                          <div className="h-3 w-4 rounded-full bg-[#f3c7a5]" />
+
+                          <div className="absolute bottom-0 h-6 w-24 rounded-full bg-black/50 blur-md" />
+
+                          <div className="relative h-24 w-20 rounded-t-[30px] rounded-b-[20px] bg-gradient-to-b from-red-400 to-red-700">
+
+                            <div className="absolute left-[-18px] top-5 h-14 w-4 rotate-45 rounded-full bg-[#f3c7a5]" />
+
+                            <div className="absolute right-[-18px] top-5 h-14 w-4 -rotate-45 rounded-full bg-[#f3c7a5]" />
+
+                          </div>
+
+                          <div className="mt-[-6px] flex gap-6">
+                            <div className="h-16 w-5 rounded-full bg-blue-700" />
+                            <div className="h-16 w-5 rounded-full bg-blue-700" />
+                          </div>
+
+                          <div className="mt-[-4px] flex gap-4">
+                            <div className="h-4 w-8 rounded-full bg-black" />
+                            <div className="h-4 w-8 rounded-full bg-black" />
+                          </div>
+
+                        </div>
 
                         <div className="relative flex flex-col items-center">
 
