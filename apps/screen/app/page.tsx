@@ -1823,47 +1823,6 @@ export default function ScreenPage() {
         </div>
 
         <div className="relative z-10 text-center">
-
-          {/* {players.slice(0, 20).map(
-            (player, index) => (
-              <motion.div
-                key={player.telegramId}
-                className="absolute"
-                initial={{
-                  x: Math.random() * 1400,
-                  y: Math.random() * 700,
-                }}
-                animate={{
-                  y: [
-                    0,
-                    -30,
-                    0,
-                  ],
-                }}
-                transition={{
-                  repeat: Infinity,
-                  duration:
-                    3 +
-                    (index % 3),
-                }}
-              >
-                {player.avatar?.startsWith(
-                  'http',
-                ) ? (
-                  <img
-                    src={player.avatar}
-                    alt="avatar"
-                    className="h-20 w-20 rounded-full border-4 border-white/50 object-cover opacity-70"
-                  />
-                ) : (
-                  <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/50 bg-black text-4xl opacity-70">
-                    {player.avatar}
-                  </div>
-                )}
-              </motion.div>
-            ),
-          )} */}
-
           <div className="mb-6 text-8xl font-black text-purple-400">
             DEAD PARTY
           </div>
@@ -1877,7 +1836,7 @@ export default function ScreenPage() {
               КОД КОМНАТЫ
             </div>
 
-            <div className="text-8xl font-black text-cyan-400">
+            <div className="text-[180px] font-black text-cyan-400">
               {roomCode}
             </div>
           </div>
@@ -1893,7 +1852,7 @@ export default function ScreenPage() {
                 ПОДКЛЮЧЕННЫЕ ИГРОКИ
               </div>
 
-              <div className="grid grid-cols-1 gap-6">
+              <div className="mx-auto flex flex-wrap justify-center gap-6">
 
                 {players.map(
                   (player: any) => (
@@ -1901,13 +1860,18 @@ export default function ScreenPage() {
                       key={player.telegramId}
                       initial={{
                         opacity: 0,
-                        scale: 0.8,
+                        scale: 0.5,
+                        y: 50,
                       }}
                       animate={{
                         opacity: 1,
                         scale: 1,
+                        y: 0,
                       }}
-                      className="rounded-[25px] border-4 border-cyan-400 bg-black/70 p-8"
+                      transition={{
+                        duration: 0.4,
+                      }}
+                      className="rounded-[25px] border border-purple-500/40 bg-black/40 p-4 backdrop-blur"
                     >
                       {player.avatar?.startsWith(
                         'http',
