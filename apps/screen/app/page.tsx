@@ -912,40 +912,35 @@ export default function ScreenPage() {
                           }
                         </div>
 
-                        <div className="relative mt-6 flex h-[180px] w-[120px] flex-col items-center justify-start">
+                        <div className="absolute bottom-0 h-6 w-24 rounded-full bg-black/50 blur-md" />
 
-                          <div className="absolute bottom-0 h-6 w-20 rounded-full bg-black/40 blur-md" />
+                        <div className="relative flex flex-col items-center">
 
-                          <div className="relative z-10 flex flex-col items-center">
+                          {/* Шея */}
+                          <div className="h-3 w-4 rounded-full bg-[#f3c7a5]" />
 
-                            <div className="h-20 w-16 rounded-t-[30px] rounded-b-[20px] bg-gradient-to-b from-red-400 to-red-700" />
+                          {/* Тело */}
+                          <div className="relative h-24 w-20 rounded-t-[30px] rounded-b-[20px] bg-gradient-to-b from-red-400 to-red-700">
 
-                            <div className="mt-[-6px] flex gap-7">
-                              <div
-                                className={`h-16 w-3 rounded-full bg-white
-                                  ${playerChoices[
-                                    player.telegramId
-                                  ]
-                                    ? 'animate-bounce'
-                                    : ''
-                                  }`}
-                              />
+                            {/* Руки */}
+                            <div className="absolute left-[-18px] top-5 h-14 w-4 rotate-45 rounded-full bg-[#f3c7a5]" />
 
-                              <div
-                                className={`h-16 w-3 rounded-full bg-white
-                                  ${playerChoices[
-                                    player.telegramId
-                                  ]
-                                    ? 'animate-bounce'
-                                    : ''
-                                  }`}
-                              />
-                            </div>
+                            <div className="absolute right-[-18px] top-5 h-14 w-4 -rotate-45 rounded-full bg-[#f3c7a5]" />
 
-                            <div className="absolute top-[20px] left-[-18px] h-12 w-3 rotate-45 rounded-full bg-white" />
-
-                            <div className="absolute top-[20px] right-[-18px] h-12 w-3 -rotate-45 rounded-full bg-white" />
                           </div>
+
+                          {/* Ноги */}
+                          <div className="mt-[-6px] flex gap-6">
+                            <div className="h-16 w-5 rounded-full bg-blue-700" />
+                            <div className="h-16 w-5 rounded-full bg-blue-700" />
+                          </div>
+
+                          {/* Обувь */}
+                          <div className="mt-[-4px] flex gap-4">
+                            <div className="h-4 w-8 rounded-full bg-black" />
+                            <div className="h-4 w-8 rounded-full bg-black" />
+                          </div>
+
                         </div>
                       </motion.div>
                     ),
@@ -1050,40 +1045,35 @@ export default function ScreenPage() {
                           }
                         </div>
 
-                        <div className="relative mt-6 flex h-[180px] w-[120px] flex-col items-center justify-start">
+                        <div className="absolute bottom-0 h-6 w-24 rounded-full bg-black/50 blur-md" />
 
-                          <div className="absolute bottom-0 h-6 w-20 rounded-full bg-black/40 blur-md" />
+                        <div className="relative flex flex-col items-center">
 
-                          <div className="relative z-10 flex flex-col items-center">
+                          {/* Шея */}
+                          <div className="h-3 w-4 rounded-full bg-[#f3c7a5]" />
 
-                            <div className="h-20 w-16 rounded-t-[30px] rounded-b-[20px] bg-gradient-to-b from-red-400 to-red-700" />
+                          {/* Тело */}
+                          <div className="relative h-24 w-20 rounded-t-[30px] rounded-b-[20px] bg-gradient-to-b from-red-400 to-red-700">
 
-                            <div className="mt-[-6px] flex gap-7">
-                              <div
-                                className={`h-16 w-3 rounded-full bg-white
-                                  ${playerChoices[
-                                    player.telegramId
-                                  ]
-                                    ? 'animate-bounce'
-                                    : ''
-                                  }`}
-                              />
+                            {/* Руки */}
+                            <div className="absolute left-[-18px] top-5 h-14 w-4 rotate-45 rounded-full bg-[#f3c7a5]" />
 
-                              <div
-                                className={`h-16 w-3 rounded-full bg-white
-                                  ${playerChoices[
-                                    player.telegramId
-                                  ]
-                                    ? 'animate-bounce'
-                                    : ''
-                                  }`}
-                              />
-                            </div>
+                            <div className="absolute right-[-18px] top-5 h-14 w-4 -rotate-45 rounded-full bg-[#f3c7a5]" />
 
-                            <div className="absolute top-[20px] left-[-18px] h-12 w-3 rotate-45 rounded-full bg-white" />
-
-                            <div className="absolute top-[20px] right-[-18px] h-12 w-3 -rotate-45 rounded-full bg-white" />
                           </div>
+
+                          {/* Ноги */}
+                          <div className="mt-[-6px] flex gap-6">
+                            <div className="h-16 w-5 rounded-full bg-blue-700" />
+                            <div className="h-16 w-5 rounded-full bg-blue-700" />
+                          </div>
+
+                          {/* Обувь */}
+                          <div className="mt-[-4px] flex gap-4">
+                            <div className="h-4 w-8 rounded-full bg-black" />
+                            <div className="h-4 w-8 rounded-full bg-black" />
+                          </div>
+
                         </div>
                       </motion.div>
                     ),
