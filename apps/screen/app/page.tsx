@@ -1824,7 +1824,7 @@ export default function ScreenPage() {
 
         <div className="relative z-10 text-center">
 
-          {players.slice(0, 20).map(
+          {/* {players.slice(0, 20).map(
             (player, index) => (
               <motion.div
                 key={player.telegramId}
@@ -1862,7 +1862,7 @@ export default function ScreenPage() {
                 )}
               </motion.div>
             ),
-          )}
+          )} */}
 
           <div className="mb-6 text-8xl font-black text-purple-400">
             DEAD PARTY
@@ -1886,54 +1886,53 @@ export default function ScreenPage() {
             Игроков подключено:
             <span className="ml-4 font-black text-yellow-400">
               {players.length}
+            </span>
+            <div className="mx-auto mt-10 max-w-6xl">
 
-              <div className="mx-auto mt-10 max-w-6xl">
+              <div className="mb-6 text-3xl font-black text-cyan-400">
+                ПОДКЛЮЧЕННЫЕ ИГРОКИ
+              </div>
 
-                <div className="mb-6 text-3xl font-black text-cyan-400">
-                  ПОДКЛЮЧЕННЫЕ ИГРОКИ
-                </div>
+              <div className="grid grid-cols-1 gap-6">
 
-                <div className="grid grid-cols-8 gap-6">
-
-                  {players.map(
-                    (player: any) => (
-                      <motion.div
-                        key={player.telegramId}
-                        initial={{
-                          opacity: 0,
-                          scale: 0.8,
-                        }}
-                        animate={{
-                          opacity: 1,
-                          scale: 1,
-                        }}
-                        className="rounded-[25px] border border-purple-500/40 bg-black/40 p-4 backdrop-blur"
-                      >
-                        {player.avatar?.startsWith(
-                          'http',
-                        ) ? (
-                          <img
-                            src={player.avatar}
-                            alt="avatar"
-                            className="mx-auto h-20 w-20 rounded-full border-4 border-purple-500 object-cover"
-                          />
-                        ) : (
-                          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-purple-500 bg-black text-4xl">
-                            {player.avatar}
-                          </div>
-                        )}
-
-                        <div className="mt-3 truncate text-lg font-black">
-                          {player.name}
+                {players.map(
+                  (player: any) => (
+                    <motion.div
+                      key={player.telegramId}
+                      initial={{
+                        opacity: 0,
+                        scale: 0.8,
+                      }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                      }}
+                      className="rounded-[25px] border-4 border-cyan-400 bg-black/70 p-8"
+                    >
+                      {player.avatar?.startsWith(
+                        'http',
+                      ) ? (
+                        <img
+                          src={player.avatar}
+                          alt="avatar"
+                          className="mx-auto h-40 w-40 rounded-full border-8 border-cyan-400 object-cover"
+                        />
+                      ) : (
+                        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border-4 border-purple-500 bg-black text-4xl">
+                          {player.avatar}
                         </div>
-                      </motion.div>
-                    ),
-                  )}
+                      )}
 
-                </div>
+                      <div className="mt-3 truncate text-lg font-black">
+                        {player.name}
+                      </div>
+                    </motion.div>
+                  ),
+                )}
 
               </div>
-            </span>
+
+            </div>
           </div>
 
         </div>
