@@ -1824,6 +1824,46 @@ export default function ScreenPage() {
 
         <div className="relative z-10 text-center">
 
+          {players.slice(0, 20).map(
+            (player, index) => (
+              <motion.div
+                key={player.telegramId}
+                className="absolute"
+                initial={{
+                  x: Math.random() * 1400,
+                  y: Math.random() * 700,
+                }}
+                animate={{
+                  y: [
+                    0,
+                    -30,
+                    0,
+                  ],
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration:
+                    3 +
+                    (index % 3),
+                }}
+              >
+                {player.avatar?.startsWith(
+                  'http',
+                ) ? (
+                  <img
+                    src={player.avatar}
+                    alt="avatar"
+                    className="h-20 w-20 rounded-full border-4 border-white/50 object-cover opacity-70"
+                  />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/50 bg-black text-4xl opacity-70">
+                    {player.avatar}
+                  </div>
+                )}
+              </motion.div>
+            ),
+          )}
+
           <div className="mb-6 text-8xl font-black text-purple-400">
             DEAD PARTY
           </div>
