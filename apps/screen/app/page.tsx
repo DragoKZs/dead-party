@@ -853,11 +853,11 @@ export default function ScreenPage() {
                             index * 100,
 
                           y:
-                          eliminatedPlayers.includes(
-                            player.telegramId,
-                          )
-                            ? 500
-                            : 0,
+                            eliminatedPlayers.includes(
+                              player.telegramId,
+                            )
+                              ? 500
+                              : 0,
 
                           opacity:
                             eliminatedPlayers.includes(
@@ -1008,7 +1008,9 @@ export default function ScreenPage() {
                         }}
 
                         transition={{
-                          duration: 0.8,
+                          duration: 1.2,
+                          type: 'spring',
+                          bounce: 0.3,
                         }}
                         className={`flex flex-col items-center transition-all duration-700
                   ${eliminatedPlayers.includes(
@@ -1810,6 +1812,48 @@ export default function ScreenPage() {
     'bg-yellow-500 border-yellow-300',
     'bg-green-600 border-green-400',
   ];
+
+  if (mode === 'idle') {
+    return (
+      <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#120014] text-white">
+
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute left-20 top-20 h-72 w-72 rounded-full bg-purple-600 blur-[140px]" />
+          <div className="absolute bottom-20 right-20 h-72 w-72 rounded-full bg-pink-600 blur-[140px]" />
+        </div>
+
+        <div className="relative z-10 text-center">
+
+          <div className="mb-6 text-8xl font-black text-purple-400">
+            DEAD PARTY
+          </div>
+
+          <div className="mb-10 text-4xl text-gray-300">
+            Подключайтесь к игре
+          </div>
+
+          <div className="mb-8 rounded-[30px] border border-purple-500 bg-black/40 px-16 py-8 backdrop-blur">
+            <div className="text-2xl text-gray-400">
+              КОД КОМНАТЫ
+            </div>
+
+            <div className="text-8xl font-black text-cyan-400">
+              {roomCode}
+            </div>
+          </div>
+
+          <div className="mb-10 text-3xl">
+            Игроков подключено:
+            <span className="ml-4 font-black text-yellow-400">
+              {players.length}
+            </span>
+          </div>
+
+        </div>
+
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#120014] p-10 text-white">
