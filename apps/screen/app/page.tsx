@@ -1395,8 +1395,8 @@ export default function ScreenPage() {
               repeat: Infinity,
               duration: 0.7,
             }}
-          >
             className={`text-[110px] font-black ${banner.color}`}
+          >
             {banner.text}
           </motion.div>
 
@@ -1562,7 +1562,7 @@ export default function ScreenPage() {
                       key={
                         player.id
                       }
-                      className={`flex items-center justify-between rounded - 2xl p - 5
+                      className={`flex items-center justify-between rounded-2xl p-5
                       ${index ===
                           0
                           ? 'border border-yellow-400 bg-yellow-500/10'
@@ -1765,7 +1765,7 @@ export default function ScreenPage() {
                 key={
                   player.telegramId
                 }
-                className={`flex items - center justify - between rounded - [30px] p - 6
+                className={`flex items-center justify-between rounded-[30px] p-6
               ${player.lives >
                     0
                     ? 'bg-white/10'
@@ -1876,7 +1876,7 @@ export default function ScreenPage() {
           </div>
 
           <div
-            className={`text - 5xl font - black ${mode === 'final'
+            className={`text-5xl font-black ${mode === 'final'
               ? 'animate-pulse text-yellow-400'
               : 'text-yellow-400'
               } `}
@@ -1910,14 +1910,14 @@ export default function ScreenPage() {
                 <div
                   key={index}
                   className={`
-    rounded - [35px]
-    border - 4
-    p - 10
-    text - center
-    text - 4xl
-    font - black
-    transition - all
-    duration - 500
+    rounded-[35px]
+    border-4
+    p-10
+    text-enter
+    text-4xl
+    font-black
+    transition-all
+    duration-500
 
                       ${answerColors[index]}
 
@@ -1949,7 +1949,7 @@ export default function ScreenPage() {
             ) => (
               <div
                 key={player.id}
-                className={`rounded-[35px] p - 6
+                className={`rounded-[35px] p-6
   ${player.lives <= 0
                     ? 'border border-red-500/20 bg-red-950/20 opacity-50'
                     : index === 0
