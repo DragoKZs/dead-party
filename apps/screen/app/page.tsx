@@ -1487,7 +1487,7 @@ export default function ScreenPage() {
                 index -
                 Math.PI / 2;
 
-              const radius = 190;
+              const radius = 230;
 
               const x =
                 Math.cos(angle) *
@@ -1501,13 +1501,23 @@ export default function ScreenPage() {
                 <div
                   key={icon}
                   className="
-        absolute
-        left-1/2
-        top-1/2
-        text-6xl
-      "
+    absolute
+    left-1/2
+    top-1/2
+    flex
+    items-center
+    justify-center
+    text-6xl
+  "
                   style={{
-                    transform: `translate(${x}px, ${y}px)`,
+                    width: '80px',
+                    height: '80px',
+                    transform: `
+      translate(
+        calc(${x}px - 40px),
+        calc(${y}px - 40px)
+      )
+    `,
                   }}
                 >
                   {icon}
