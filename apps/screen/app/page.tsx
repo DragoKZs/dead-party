@@ -1439,19 +1439,66 @@ export default function ScreenPage() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white">
 
-        <motion.div
-          animate={{
-            rotate: 360,
-          }}
-          transition={{
-            repeat: Infinity,
-            duration: 1,
-            ease: 'linear',
-          }}
-          className="mb-10 text-[220px]"
-        >
-          🎰
-        </motion.div>
+        <div className="relative">
+
+          <motion.div
+            animate={{
+              rotate:
+                chaosEffect?.effectId ===
+                  'life'
+                  ? 2160
+                  : chaosEffect?.effectId ===
+                    'random300'
+                    ? 2250
+                    : chaosEffect?.effectId ===
+                      'double'
+                      ? 2340
+                      : 720,
+            }}
+            transition={{
+              duration: 4,
+              ease: 'easeOut',
+            }}
+            className="
+      relative
+      h-[550px]
+      w-[550px]
+      rounded-full
+      border-[14px]
+      border-yellow-400
+      bg-gradient-to-br
+      from-purple-700
+      to-pink-700
+    "
+          >
+
+            <div className="absolute left-1/2 top-4 -translate-x-1/2 text-7xl">
+              ❤️
+            </div>
+
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-7xl">
+              🎁
+            </div>
+
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-7xl">
+              ⚡
+            </div>
+
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-7xl">
+              💀
+            </div>
+
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[120px]">
+              🎰
+            </div>
+
+          </motion.div>
+
+          <div className="absolute left-1/2 top-[-40px] -translate-x-1/2 text-8xl">
+            ▼
+          </div>
+
+        </div>
 
         <div className="text-8xl font-black text-yellow-400">
           КОЛЕСО ХАОСА

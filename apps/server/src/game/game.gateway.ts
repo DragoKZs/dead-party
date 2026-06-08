@@ -322,12 +322,22 @@ export class GameGateway {
                       player.score += 50;
                     }
                   } else {
-                    player.score +=
+                    const points =
                       room.isFinalRound
                         ? 300
                         : room.isSpeedRound
                           ? 200
                           : 100;
+
+                    if (
+                      room.nextQuestionDouble
+                    ) {
+                      player.score +=
+                        points * 2;
+                    } else {
+                      player.score +=
+                        points;
+                    }
                   }
 
                   player.streak++;
@@ -367,6 +377,13 @@ export class GameGateway {
             this.emitPlayers(
               roomCode,
             );
+
+            if (
+              room.nextQuestionDouble
+            ) {
+              room.nextQuestionDouble =
+                false;
+            }
           }
         }, 1000);
     };
@@ -589,6 +606,9 @@ export class GameGateway {
           },
         );
 
+        room.nextQuestionDouble =
+          false;
+
         this.server.to(
           roomCode,
         ).emit(
@@ -700,6 +720,7 @@ export class GameGateway {
 
     const effects = [
       {
+        id: "life",
         title:
           '❤️ ВСЕМ +1 ЖИЗНЬ',
         action: () => {
@@ -717,6 +738,7 @@ export class GameGateway {
       },
 
       {
+        id: "random300",
         title:
           '🎁 СЛУЧАЙНЫЙ ИГРОК +300',
         action: () => {
@@ -740,6 +762,7 @@ export class GameGateway {
       },
 
       {
+        id: "double",
         title:
           '⚡ СЛЕДУЮЩИЙ ВОПРОС x2',
         action: () => {
@@ -771,8 +794,18 @@ export class GameGateway {
         {
           title:
             effect.title,
+
+          effectId:
+            effect.id,
         },
       );
+
+      setTimeout(() => {
+        this.startQuestion(
+          roomCode,
+        );
+      }, 4000);
+
     }, 3000);
   }
 
