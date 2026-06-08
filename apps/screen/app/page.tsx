@@ -1974,6 +1974,34 @@ export default function ScreenPage() {
             {question.text}
           </div>
 
+          {questionEnded && (
+            <motion.div
+              initial={{
+                scale: 0.5,
+                opacity: 0,
+              }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+              }}
+              className="
+      fixed
+      left-1/2
+      top-1/2
+      z-[60]
+      -translate-x-1/2
+      -translate-y-1/2
+      text-[120px]
+      font-black
+      text-green-400
+      drop-shadow-[0_0_30px_rgba(34,197,94,1)]
+      pointer-events-none
+    "
+            >
+              ✓
+            </motion.div>
+          )}
+
           <div className="grid grid-cols-2 gap-6">
             {question.answers.map(
               (
@@ -1986,7 +2014,7 @@ export default function ScreenPage() {
     rounded-[35px]
     border-4
     p-10
-    text-enter
+    text-center
     text-4xl
     font-black
     transition-all
@@ -1996,7 +2024,7 @@ export default function ScreenPage() {
 
                       ${questionEnded &&
                       correctAnswer === index
-                      ? 'scale-105 shadow-[0_0_50px_rgba(0,255,0,0.9)]'
+                      ? 'scale-110 animate-pulse shadow-[0_0_80px_rgba(34,197,94,1)]'
                       : ''
                     }
     `}
@@ -2007,6 +2035,21 @@ export default function ScreenPage() {
             )}
           </div>
         </div>
+      )}
+
+      {questionEnded && (
+        <motion.div
+          initial={{
+            opacity: 0,
+          }}
+          animate={{
+            opacity: [0, 0.35, 0],
+          }}
+          transition={{
+            duration: 0.8,
+          }}
+          className="pointer-events-none fixed inset-0 z-50 bg-green-500"
+        />
       )}
 
       <div className="mt-10">
