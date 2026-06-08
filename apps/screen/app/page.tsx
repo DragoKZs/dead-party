@@ -1435,6 +1435,15 @@ export default function ScreenPage() {
     mode ===
     'chaos-wheel'
   ) {
+
+    const wheelSectors = [
+      '❤️',
+      '🎁',
+      '⚡',
+      '💀',
+      '🛡',
+    ];
+
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white">
 
@@ -1472,21 +1481,34 @@ export default function ScreenPage() {
     "
           >
 
-            <div className="absolute left-1/2 top-4 -translate-x-1/2 text-7xl">
-              ❤️
-            </div>
+            {wheelSectors.map(
+              (icon, index) => {
+                const angle =
+                  (360 / wheelSectors.length) *
+                  index;
 
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-7xl">
-              🎁
-            </div>
-
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-7xl">
-              ⚡
-            </div>
-
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-7xl">
-              💀
-            </div>
+                return (
+                  <div
+                    key={icon}
+                    className="
+          absolute
+          left-1/2
+          top-1/2
+          text-7xl
+        "
+                    style={{
+                      transform: `
+            rotate(${angle}deg)
+            translateY(-220px)
+            rotate(-${angle}deg)
+          `,
+                    }}
+                  >
+                    {icon}
+                  </div>
+                );
+              },
+            )}
 
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[120px]">
               🎰
