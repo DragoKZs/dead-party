@@ -1481,37 +1481,42 @@ export default function ScreenPage() {
     "
           >
 
-            {wheelSectors.map(
-              (icon, index) => {
-                const angle =
-                  (360 / wheelSectors.length) *
-                  index;
+            {wheelSectors.map((icon, index) => {
+              const angle =
+                ((Math.PI * 2) / wheelSectors.length) *
+                index -
+                Math.PI / 2;
 
-                return (
-                  <div
-                    key={icon}
-                    className="
-          absolute
-          left-1/2
-          top-1/2
-          text-7xl
-        "
-                    style={{
-                      transform: `
-            rotate(${angle}deg)
-            translateY(-220px)
-            rotate(-${angle}deg)
-          `,
-                    }}
-                  >
-                    {icon}
-                  </div>
-                );
-              },
-            )}
+              const radius = 190;
+
+              const x =
+                Math.cos(angle) *
+                radius;
+
+              const y =
+                Math.sin(angle) *
+                radius;
+
+              return (
+                <div
+                  key={icon}
+                  className="
+        absolute
+        left-1/2
+        top-1/2
+        text-6xl
+      "
+                  style={{
+                    transform: `translate(${x}px, ${y}px)`,
+                  }}
+                >
+                  {icon}
+                </div>
+              );
+            })}
 
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[120px]">
-              🎰
+              ХАОС
             </div>
 
           </motion.div>
