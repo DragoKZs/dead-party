@@ -770,6 +770,44 @@ export class GameGateway {
             true;
         },
       },
+
+      {
+        id: 'minusLife',
+        title: '💀 ВСЕМ -1 ЖИЗНЬ',
+        action: () => {
+          room.players.forEach((p: any) => {
+            if (p.lives > 0) {
+              p.lives--;
+            }
+          });
+        },
+      },
+
+      {
+        id: 'revive',
+        title: '🛡 ВОСКРЕШЕНИЕ',
+        action: () => {
+          const deadPlayers =
+            room.players.filter(
+              (p: any) => p.lives <= 0,
+            );
+
+          if (deadPlayers.length > 0) {
+            const random =
+              deadPlayers[
+              Math.floor(
+                Math.random() *
+                deadPlayers.length,
+              )
+              ];
+
+            random.lives = 1;
+
+            effect.title =
+              `🛡 ${random.name} ВОСКРЕШЁН`;
+          }
+        },
+      },
     ];
 
     const effect =

@@ -1443,16 +1443,17 @@ export default function ScreenPage() {
           <motion.div
             animate={{
               rotate:
-                chaosEffect?.effectId ===
-                  'life'
+                chaosEffect?.effectId === 'life'
                   ? 2160
-                  : chaosEffect?.effectId ===
-                    'random300'
-                    ? 2250
-                    : chaosEffect?.effectId ===
-                      'double'
-                      ? 2340
-                      : 720,
+                  : chaosEffect?.effectId === 'random300'
+                    ? 2232
+                    : chaosEffect?.effectId === 'double'
+                      ? 2304
+                      : chaosEffect?.effectId === 'minusLife'
+                        ? 2376
+                        : chaosEffect?.effectId === 'revive'
+                          ? 2448
+                          : 720
             }}
             transition={{
               duration: 4,
@@ -1518,6 +1519,149 @@ export default function ScreenPage() {
             >
               <div className="text-6xl font-black text-cyan-400">
                 {chaosEffect.title}
+              </div>
+            </motion.div>
+          )}
+
+        {showChaosResult &&
+          chaosEffect?.effectId === 'life' &&
+          Array.from({ length: 20 }).map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute text-5xl"
+              initial={{
+                x: Math.random() * 1600,
+                y: 1000,
+              }}
+              animate={{
+                y: -200,
+              }}
+              transition={{
+                duration: 3,
+                delay: Math.random(),
+              }}
+            >
+              ❤️
+            </motion.div>
+          ))}
+
+        {showChaosResult &&
+          chaosEffect?.effectId === 'random300' && (
+            <motion.div
+              initial={{
+                scale: 0.5,
+                opacity: 0,
+              }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+              }}
+              className="
+        absolute
+        left-1/2
+        top-1/2
+        -translate-x-1/2
+        -translate-y-1/2
+        text-center
+      "
+            >
+              <div className="text-[180px]">
+                🎁
+              </div>
+
+              <div className="text-8xl font-black text-yellow-400">
+                +300
+              </div>
+            </motion.div>
+          )}
+
+        {showChaosResult &&
+          chaosEffect?.effectId === 'double' && (
+            <motion.div
+              initial={{
+                scale: 0.5,
+                opacity: 0,
+              }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+              }}
+              className="
+        absolute
+        left-1/2
+        top-1/2
+        -translate-x-1/2
+        -translate-y-1/2
+        text-center
+      "
+            >
+              <div className="text-[180px]">
+                ⚡
+              </div>
+
+              <div className="text-8xl font-black text-yellow-400">
+                DOUBLE POINTS
+              </div>
+
+              <div className="mt-4 text-5xl font-black text-white">
+                СЛЕДУЮЩИЙ ВОПРОС ×2
+              </div>
+            </motion.div>
+          )}
+
+        {showChaosResult &&
+          chaosEffect?.effectId === 'minusLife' &&
+          Array.from({ length: 20 }).map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute text-6xl"
+              initial={{
+                x: Math.random() * 1600,
+                y: -100,
+              }}
+              animate={{
+                y: 1200,
+                rotate: 360,
+              }}
+              transition={{
+                duration: 3,
+                delay: Math.random(),
+              }}
+            >
+              💀
+            </motion.div>
+          ))}
+
+        {showChaosResult &&
+          chaosEffect?.effectId === 'revive' && (
+            <motion.div
+              initial={{
+                scale: 0.3,
+                opacity: 0,
+              }}
+              animate={{
+                scale: 1,
+                opacity: 1,
+              }}
+              className="
+        absolute
+        left-1/2
+        top-1/2
+        -translate-x-1/2
+        -translate-y-1/2
+        text-center
+      "
+            >
+              <div className="text-[180px]">
+                🛡
+              </div>
+
+              <div className="text-7xl font-black text-green-400">
+                ВОСКРЕШЕНИЕ
+              </div>
+
+              <div className="mt-4 text-5xl font-black text-white">
+                ИГРОК ВЕРНУЛСЯ В ИГРУ
               </div>
             </motion.div>
           )}
