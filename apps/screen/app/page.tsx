@@ -213,6 +213,15 @@ export default function ScreenPage() {
     socket.on(
       'chaosWheelStarted',
       () => {
+
+        setChaosEffect(
+          null,
+        );
+
+        setShowChaosResult(
+          false,
+        );
+
         setMode(
           'chaos-wheel',
         );
@@ -222,10 +231,19 @@ export default function ScreenPage() {
     socket.on(
       'chaosWheelResult',
       (data) => {
-        setChaosEffect(data);
+
+        setShowChaosResult(
+          false,
+        );
+
+        setChaosEffect(
+          data,
+        );
 
         setTimeout(() => {
-          setShowChaosResult(true);
+          setShowChaosResult(
+            true,
+          );
         }, 4200);
       },
     );
@@ -252,6 +270,14 @@ export default function ScreenPage() {
       'questionStarted',
       (data) => {
         setMode('quiz');
+
+        setChaosEffect(
+          null,
+        );
+
+        setShowChaosResult(
+          false,
+        );
 
         setRoundBanner(
           null,
