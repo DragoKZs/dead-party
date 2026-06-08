@@ -627,6 +627,19 @@ export default function HostPage() {
             GAME
           </button>
 
+          <button
+            onClick={() =>
+              socket.emit(
+                'startChaosWheel',
+                {
+                  roomCode,
+                },
+              )
+            }
+            className="rounded-2xl bg-pink-600 p-4 text-2xl font-black"
+          >
+            🎰 КОЛЕСО ХАОСА
+          </button>
 
           <button
             disabled={

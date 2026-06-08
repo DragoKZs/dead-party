@@ -33,7 +33,8 @@ type ScreenMode =
   | 'bomb-pass'
   | 'survival-run'
   | 'final'
-  | 'final-results';
+  | 'final-results'
+  | 'chaos-wheel';
 
 export default function ScreenPage() {
   const [mode, setMode] =
@@ -173,6 +174,11 @@ export default function ScreenPage() {
   ] = useState(false);
 
   const [
+    chaosEffect,
+    setChaosEffect,
+  ] = useState<any>(null);
+
+  const [
     finalLeaderboard,
     setFinalLeaderboard,
   ] = useState<any[]>(
@@ -196,6 +202,32 @@ export default function ScreenPage() {
         setPlayers(
           data.players,
         );
+      },
+    );
+
+    socket.on(
+      'chaosWheelStarted',
+      () => {
+        setMode(
+          'chaos-wheel',
+        );
+      },
+    );
+
+    socket.on(
+      'chaosWheelResult',
+      (data) => {
+        setChaosEffect(
+          data,
+        );
+
+        setTimeout(() => {
+          setMode('idle');
+
+          setChaosEffect(
+            null,
+          );
+        }, 4000);
       },
     );
 
@@ -1397,6 +1429,47 @@ export default function ScreenPage() {
         </motion.div>
 
       </motion.main>
+    );
+  }
+
+  if (
+    mode ===
+    'chaos-wheel'
+  ) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white">
+
+        <motion.div
+          animate={{
+            rotate: 360,
+          }}
+          transition={{
+            repeat: Infinity,
+            duration: 1,
+            ease: 'linear',
+          }}
+          className="mb-10 text-[220px]"
+        >
+          🎰
+        </motion.div>
+
+        <div className="text-8xl font-black text-yellow-400">
+          КОЛЕСО ХАОСА
+        </div>
+
+        {chaosEffect && (
+          <div className="mt-10 text-center">
+
+            <div className="text-6xl font-black text-cyan-400">
+              {
+                chaosEffect.title
+              }
+            </div>
+
+          </div>
+        )}
+
+      </main>
     );
   }
 

@@ -682,6 +682,100 @@ export class GameGateway {
     askQuestion();
   }
 
+  private startChaosWheel(
+    roomCode: string,
+  ) {
+    const room =
+      this.getRoom(
+        roomCode,
+      );
+
+    if (!room) return;
+
+    this.server.to(
+      roomCode,
+    ).emit(
+      'chaosWheelStarted',
+    );
+
+    const effects = [
+      {
+        title:
+          '❤️ ВСЕМ +1 ЖИЗНЬ',
+        action: () => {
+          room.players.forEach(
+            (
+              p: any,
+            ) => {
+              if (
+                p.lives < 3
+              )
+                p.lives++;
+            },
+          );
+        },
+      },
+
+      {
+        title:
+          '🎁 СЛУЧАЙНЫЙ ИГРОК +300',
+        action: () => {
+
+          const random =
+            room.players[
+            Math.floor(
+              Math.random() *
+              room.players.length,
+            )
+            ];
+
+          if (random) {
+            random.score +=
+              300;
+
+            effect.title =
+              `🎁 ${random.name} +300`;
+          }
+        },
+      },
+
+      {
+        title:
+          '⚡ СЛЕДУЮЩИЙ ВОПРОС x2',
+        action: () => {
+          room.nextQuestionDouble =
+            true;
+        },
+      },
+    ];
+
+    const effect =
+      effects[
+      Math.floor(
+        Math.random() *
+        effects.length,
+      )
+      ];
+
+    setTimeout(() => {
+      effect.action();
+
+      this.emitPlayers(
+        roomCode,
+      );
+
+      this.server.to(
+        roomCode,
+      ).emit(
+        'chaosWheelResult',
+        {
+          title:
+            effect.title,
+        },
+      );
+    }, 3000);
+  }
+
   private startMazeGame(
     roomCode: string,
     difficulty = 'normal',
@@ -856,6 +950,9 @@ export class GameGateway {
         false,
 
       closed: false,
+
+      nextQuestionDouble:
+        false,
 
       miniGameActive:
         false,
@@ -1523,6 +1620,18 @@ export class GameGateway {
       data.roomCode,
       data.difficulty ||
       'normal',
+    );
+  }
+
+  @SubscribeMessage(
+    'startChaosWheel',
+  )
+  startChaosWheelEvent(
+    @MessageBody()
+    data: any,
+  ) {
+    this.startChaosWheel(
+      data.roomCode,
     );
   }
 
