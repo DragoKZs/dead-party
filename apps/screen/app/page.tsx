@@ -129,6 +129,11 @@ export default function ScreenPage() {
   );
 
   const [
+    showChaosResult,
+    setShowChaosResult,
+  ] = useState(false);
+
+  const [
     survivalPlayers,
     setSurvivalPlayers,
   ] = useState<any[]>(
@@ -217,17 +222,11 @@ export default function ScreenPage() {
     socket.on(
       'chaosWheelResult',
       (data) => {
-        setChaosEffect(
-          data,
-        );
+        setChaosEffect(data);
 
         setTimeout(() => {
-          setMode('idle');
-
-          setChaosEffect(
-            null,
-          );
-        }, 4000);
+          setShowChaosResult(true);
+        }, 4200);
       },
     );
 
@@ -1504,17 +1503,24 @@ export default function ScreenPage() {
           КОЛЕСО ХАОСА
         </div>
 
-        {chaosEffect && (
-          <div className="mt-10 text-center">
-
-            <div className="text-6xl font-black text-cyan-400">
-              {
-                chaosEffect.title
-              }
-            </div>
-
-          </div>
-        )}
+        {showChaosResult &&
+          chaosEffect && (
+            <motion.div
+              initial={{
+                opacity: 0,
+                scale: 0.5,
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+              }}
+              className="mt-10 text-center"
+            >
+              <div className="text-6xl font-black text-cyan-400">
+                {chaosEffect.title}
+              </div>
+            </motion.div>
+          )}
 
       </main>
     );
