@@ -1606,6 +1606,34 @@ export default function ScreenPage() {
     return (
       <main className="flex min-h-screen flex-col overflow-y-auto bg-[#120014] p-10 text-white">
 
+        {Array.from({ length: 25 }).map(
+          (_, i) => (
+            <motion.div
+              key={i}
+              className="absolute text-5xl"
+              initial={{
+                x: Math.random() * window.innerWidth,
+                y: -100,
+              }}
+              animate={{
+                y:
+                  window.innerHeight +
+                  200,
+              }}
+              transition={{
+                repeat: Infinity,
+                duration:
+                  4 +
+                  Math.random() * 3,
+                delay:
+                  Math.random() * 3,
+              }}
+            >
+              🎉
+            </motion.div>
+          ),
+        )}
+
         <div className="mb-14 text-center text-8xl font-black text-yellow-400">
           👑 FINAL RESULTS
         </div>
@@ -1613,7 +1641,8 @@ export default function ScreenPage() {
         <div className="mb-24 flex items-end justify-center gap-10">
 
           {finalPodium[1] && (
-            <div className="flex flex-col items-center">
+            <div className="relative flex flex-col items-center">
+              <div className="absolute h-[500px] w-[500px] rounded-full bg-yellow-400/20 blur-[120px]" />
               <div className="mb-5 text-6xl">
                 🥈
               </div>
@@ -1655,9 +1684,19 @@ export default function ScreenPage() {
 
           {finalPodium[0] && (
             <div className="flex flex-col items-center">
-              <div className="mb-5 animate-bounce text-7xl">
+              <motion.div
+                animate={{
+                  y: [0, -15, 0],
+                  rotate: [0, 5, -5, 0],
+                }}
+                transition={{
+                  repeat: Infinity,
+                  duration: 2,
+                }}
+                className="mb-5 text-7xl"
+              >
                 👑
-              </div>
+              </motion.div>
 
               <div className="flex h-52 w-52 items-center justify-center overflow-hidden rounded-full border-[10px] border-yellow-400 bg-black shadow-[0_0_60px_gold]">
                 {finalPodium[0]
