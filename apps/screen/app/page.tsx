@@ -232,11 +232,6 @@ export default function ScreenPage() {
       'chaosWheelResult',
       (data) => {
 
-        console.log(
-          'CHAOS EFFECT:',
-          data.effectId,
-        );
-
         setShowChaosResult(
           false,
         );
@@ -1498,11 +1493,11 @@ export default function ScreenPage() {
     const sectorSize = 360 / wheelSectors.length;
 
     const wheelRotations = {
-      life: 2160 + 0 * sectorSize,
-      random300: 2160 + 1 * sectorSize,
-      double: 2160 + 2 * sectorSize,
-      minusLife: 2160 + 3 * sectorSize,
-      revive: 2160 + 4 * sectorSize,
+      life: 2160 - 72,
+      random300: 2160 - 144,
+      double: 2160 - 216,
+      minusLife: 2160 - 288,
+      revive: 2160 - 360,
     };
 
     return (
