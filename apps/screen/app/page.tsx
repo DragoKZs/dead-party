@@ -1546,43 +1546,62 @@ export default function ScreenPage() {
               className="absolute inset-0"
               viewBox="0 0 550 550"
             >
-              {wheelSectors.map(
-                (sector, index) => {
-                  const angle =
-                    (360 / wheelSectors.length) *
-                    index;
+              {wheelSectors.map((sector, index) => {
+                const startAngle =
+                  (360 / wheelSectors.length) *
+                  index;
 
-                  return (
-                    <g
-                      key={sector.id}
-                      transform={`rotate(${angle} 275 275)`}
+                const centerAngle =
+                  startAngle +
+                  360 / wheelSectors.length / 2;
+
+                const radius = 180;
+
+                const x =
+                  275 +
+                  Math.cos(
+                    ((centerAngle - 90) *
+                      Math.PI) /
+                    180,
+                  ) *
+                  radius;
+
+                const y =
+                  275 +
+                  Math.sin(
+                    ((centerAngle - 90) *
+                      Math.PI) /
+                    180,
+                  ) *
+                  radius;
+
+                return (
+                  <g key={sector.id}>
+                    <path
+                      d="
+        M275 275
+        L275 30
+        A245 245 0 0 1
+        508 199
+        Z
+      "
+                      fill={sector.color}
+                      opacity={0.8}
+                      transform={`rotate(${startAngle} 275 275)`}
+                    />
+
+                    <text
+                      x={x}
+                      y={y}
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize="42"
                     >
-                      <path
-                        d="
-            M275 275
-            L275 30
-            A245 245 0 0 1
-            508 199
-            Z
-          "
-                        fill={
-                          sector.color
-                        }
-                        opacity={0.8}
-                      />
-
-                      <text
-                        x="275"
-                        y="100"
-                        textAnchor="middle"
-                        fontSize="42"
-                      >
-                        {sector.icon}
-                      </text>
-                    </g>
-                  );
-                },
-              )}
+                      {sector.icon}
+                    </text>
+                  </g>
+                );
+              })}
             </svg>
 
             <div
