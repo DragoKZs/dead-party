@@ -1463,12 +1463,42 @@ export default function ScreenPage() {
   ) {
 
     const wheelSectors = [
-      '❤️',
-      '🎁',
-      '⚡',
-      '💀',
-      '🛡',
+      {
+        id: 'life',
+        icon: '❤️',
+        color: '#ef4444',
+      },
+      {
+        id: 'random300',
+        icon: '🎁',
+        color: '#f59e0b',
+      },
+      {
+        id: 'double',
+        icon: '⚡',
+        color: '#eab308',
+      },
+      {
+        id: 'minusLife',
+        icon: '💀',
+        color: '#6b7280',
+      },
+      {
+        id: 'revive',
+        icon: '🛡',
+        color: '#22c55e',
+      },
     ];
+
+    const sectorSize = 360 / wheelSectors.length;
+
+    const wheelRotations = {
+      life: 2160 + 0 * sectorSize,
+      random300: 2160 + 1 * sectorSize,
+      double: 2160 + 2 * sectorSize,
+      minusLife: 2160 + 3 * sectorSize,
+      revive: 2160 + 4 * sectorSize,
+    };
 
     return (
       <main className="flex min-h-screen flex-col items-center justify-center bg-black text-white">
@@ -1478,17 +1508,12 @@ export default function ScreenPage() {
           <motion.div
             animate={{
               rotate:
-                chaosEffect?.effectId === 'life'
-                  ? 2160
-                  : chaosEffect?.effectId === 'random300'
-                    ? 2232
-                    : chaosEffect?.effectId === 'double'
-                      ? 2304
-                      : chaosEffect?.effectId === 'minusLife'
-                        ? 2376
-                        : chaosEffect?.effectId === 'revive'
-                          ? 2448
-                          : 720,
+                chaosEffect
+                  ? wheelRotations[
+                  chaosEffect.effectId as keyof typeof wheelRotations
+                  ]
+                  : 720,
+
               opacity: showChaosResult ? 0 : 1,
               scale: showChaosResult ? 0.8 : 1,
             }}
@@ -1517,51 +1542,61 @@ export default function ScreenPage() {
     "
           >
 
-            {wheelSectors.map((icon, index) => {
-              const angle =
-                ((Math.PI * 2) / wheelSectors.length) *
-                index -
-                Math.PI / 2;
+            <svg
+              className="absolute inset-0"
+              viewBox="0 0 550 550"
+            >
+              {wheelSectors.map(
+                (sector, index) => {
+                  const angle =
+                    (360 / wheelSectors.length) *
+                    index;
 
-              const radius = 230;
+                  return (
+                    <g
+                      key={sector.id}
+                      transform={`rotate(${angle} 275 275)`}
+                    >
+                      <path
+                        d="
+            M275 275
+            L275 30
+            A245 245 0 0 1
+            508 199
+            Z
+          "
+                        fill={
+                          sector.color
+                        }
+                        opacity={0.8}
+                      />
 
-              const x =
-                Math.cos(angle) *
-                radius;
+                      <text
+                        x="275"
+                        y="100"
+                        textAnchor="middle"
+                        fontSize="42"
+                      >
+                        {sector.icon}
+                      </text>
+                    </g>
+                  );
+                },
+              )}
+            </svg>
 
-              const y =
-                Math.sin(angle) *
-                radius;
-
-              return (
-                <div
-                  key={icon}
-                  className="
+            <div
+              className="
     absolute
     left-1/2
     top-1/2
-    flex
-    items-center
-    justify-center
-    text-6xl
+    -translate-x-1/2
+    -translate-y-1/2
+    text-8xl
+    font-black
+    text-white
   "
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    transform: `
-      translate(
-        calc(${x}px - 40px),
-        calc(${y}px - 40px)
-      )
-    `,
-                  }}
-                >
-                  {icon}
-                </div>
-              );
-            })}
-
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[120px]">
+            >
               ХАОС
             </div>
 
