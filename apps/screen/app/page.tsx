@@ -232,10 +232,6 @@ export default function ScreenPage() {
       'chaosWheelResult',
       (data) => {
 
-        alert(
-          `SERVER: ${data.effectId}`
-        );
-
         setShowChaosResult(
           false,
         );
@@ -251,6 +247,26 @@ export default function ScreenPage() {
         }, 4200);
       },
     );
+
+    <div
+      className="
+    fixed
+    top-10
+    left-10
+    z-[9999]
+    rounded-xl
+    bg-black/80
+    px-6
+    py-3
+    text-3xl
+    font-black
+    text-red-400
+  "
+    >
+      SERVER:
+      {' '}
+      {chaosEffect?.effectId}
+    </div>
 
     socket.on(
       'finalAnnouncement',
