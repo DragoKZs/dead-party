@@ -1493,11 +1493,11 @@ export default function ScreenPage() {
     const sectorSize = 360 / wheelSectors.length;
 
     const wheelRotations = {
-      life: 2160 - 72,
-      random300: 2160 - 144,
-      double: 2160 - 216,
-      minusLife: 2160 - 288,
-      revive: 2160 - 360,
+      life: 2160 + sectorSize * 0.5,
+      random300: 2160 + sectorSize * 1.5,
+      double: 2160 + sectorSize * 2.5,
+      minusLife: 2160 + sectorSize * 3.5,
+      revive: 2160 + sectorSize * 4.5,
     };
 
     return (
