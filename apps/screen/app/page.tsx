@@ -232,6 +232,11 @@ export default function ScreenPage() {
       'chaosWheelResult',
       (data) => {
 
+        console.log(
+          'CHAOS EFFECT:',
+          data.effectId,
+        );
+
         setShowChaosResult(
           false,
         );
