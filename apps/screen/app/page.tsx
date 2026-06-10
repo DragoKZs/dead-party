@@ -1488,11 +1488,21 @@ export default function ScreenPage() {
                         ? 2376
                         : chaosEffect?.effectId === 'revive'
                           ? 2448
-                          : 720
+                          : 720,
+              opacity: showChaosResult ? 0 : 1,
+              scale: showChaosResult ? 0.8 : 1,
             }}
             transition={{
-              duration: 4,
-              ease: 'easeOut',
+              rotate: {
+                duration: 4,
+                ease: 'easeOut',
+              },
+              opacity: {
+                duration: 0.5,
+              },
+              scale: {
+                duration: 0.5,
+              },
             }}
             className="
       relative
@@ -1563,9 +1573,11 @@ export default function ScreenPage() {
 
         </div>
 
-        <div className="text-8xl font-black text-yellow-400">
-          КОЛЕСО ХАОСА
-        </div>
+        {!showChaosResult && (
+          <div className="text-8xl font-black text-yellow-400">
+            КОЛЕСО ХАОСА
+          </div>
+        )}
 
         {showChaosResult &&
           chaosEffect && (
@@ -1577,6 +1589,9 @@ export default function ScreenPage() {
               animate={{
                 opacity: 1,
                 scale: 1,
+              }}
+              transition={{
+                duration: 0.5,
               }}
               className="mt-10 text-center"
             >
